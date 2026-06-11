@@ -36,6 +36,19 @@ CASE-448/449/450 fixes landed the same evening).
 - **CASE-450** (grants) — implemented; `create_api_key` takes
   `grant_permission`, grant subjects are canonical, MCP grant tools exist.
 
+## Backlog from Peter (2026-06-11, end of first session)
+
+- **Playback speed** — slow down melody/backing playback for practice.
+- **Loops** — repeat a selected section (notes or time range) until nailed.
+- **Markers** — named positions in a song (verse, chorus, "the hard bit") to
+  jump to and to anchor loops/exercises. Likely a data-model addition
+  (markers on SONG_TRACK) → Rule 6: through Phase 2/3 first.
+- **Background tracks** — attach/import real audio (backing/full mix) to
+  songs, e.g. upload MP3 alongside an imported MIDI; the fields exist
+  (audio_full/audio_backing), the upload UI doesn't yet.
+- Range-aware transposition (from the first mic test — A4 drills are brutal
+  for low voices).
+
 ## Deferred by design (v1 scope cuts — DESIGN.md)
 
 - Lesson/exercise **authoring UI** (curriculum is seed-data only).
