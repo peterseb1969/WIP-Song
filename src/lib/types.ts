@@ -1,0 +1,66 @@
+import type { Melody, NoteEvent } from './music'
+
+/** data shape of a SONG_TRACK document (see DESIGN.md / data-model/templates/02_SONG_TRACK.json). */
+export interface SongData {
+  title: string
+  artist: string
+  language?: string
+  genre?: string
+  difficulty?: string
+  musical_key?: string
+  duration_seconds?: number
+  tempo_bpm?: number
+  lyrics_text?: string
+  source_format?: string
+  original_file?: string
+  audio_full?: string
+  audio_backing?: string
+  melody?: Melody
+}
+
+/** data shape of a SONG_EXERCISE document. */
+export interface ExerciseData {
+  code: string
+  title: string
+  exercise_type: string
+  description?: string
+  difficulty?: string
+  target_notes?: { events: NoteEvent[] }
+  song_ref?: string
+  section_start_ms?: number
+  section_end_ms?: number
+}
+
+/** data shape of a SONG_LESSON document. */
+export interface LessonData {
+  code: string
+  title: string
+  description?: string
+  difficulty?: string
+  exercise_refs: string[]
+}
+
+/** data shape of a SONG_ATTEMPT document. */
+export interface AttemptData {
+  attempt_id: string
+  singer_ref: string
+  exercise_ref?: string
+  song_ref?: string
+  recorded_at: string
+  recording_file: string
+  transcription?: { events: NoteEvent[] }
+  pitch_score?: number
+  rhythm_score?: number
+  overall_score?: number
+  duration_seconds?: number
+}
+
+/** data shape of a SONG_PROGRESS document. */
+export interface ProgressData {
+  singer_ref: string
+  lesson_ref: string
+  status: string
+  best_score?: number
+  attempts_count?: number
+  completed_exercise_codes?: string[]
+}

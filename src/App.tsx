@@ -4,6 +4,8 @@ import { SingerProvider } from './contexts/SingerContext'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
+import SongsPage from './pages/SongsPage'
+import SongDetailPage from './pages/SongDetailPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
@@ -19,10 +21,8 @@ export default function App() {
           <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
-            <Route
-              path="/songs"
-              element={<PlaceholderPage title="Songs" comingIn="Song library and import arrive in build phase 3." />}
-            />
+            <Route path="/songs" element={<SongsPage />} />
+            <Route path="/songs/:id" element={<SongDetailPage />} />
             <Route
               path="/lessons"
               element={<PlaceholderPage title="Lessons" comingIn="Lessons arrive in build phase 7." />}
