@@ -5,3 +5,4 @@ dist/
 .claude/.session-id
 .claude/.session-role
 .claude-context-pct
+.DS_Store
