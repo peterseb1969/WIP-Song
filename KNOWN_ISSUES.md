@@ -5,14 +5,25 @@ CASE-448/449/450 fixes landed the same evening).
 
 ## Needs human verification
 
-- **Practice-player audio is untested with a real microphone.** The pipeline
-  (capture → pitch detection → scoring → save) is unit-tested and the save
-  path verified over the wire, but no human has sung into it yet — Peter's
-  machine had no mic connected at test time.
+- ~~Practice-player audio untested with a real microphone~~ **VERIFIED
+  2026-06-11**: Peter sang against the A4 drill; detection read his low
+  register plausibly (G2/A♭2), scoring behaved as designed (octave rule),
+  attempts + audio/webm recordings persisted. Surfaced one bug (uploadFile
+  needed the namespace arg — fixed in 78a7176).
 - **.kar syllable alignment is heuristic-only** — no .kar sample file has
   been parsed yet (IMPORT_FORMATS.md).
 - **`wip-deploy install --app-source` acceptance run not yet executed**
   (contract verification step 3). Dockerfiles + manifest are in place.
+
+## Observations from the first human test
+
+- **A4 drills are brutal for low voices** — Peter (baritone, range top =
+  exactly A4) landed at A♭2. Range-aware target transposition (suggest the
+  singer's octave, score against it) should move up the priority list.
+- Minor data hygiene: two dev-session test attempts carry naive (no-Z)
+  `recorded_at` strings that lexically sort above real UTC timestamps; app
+  writes are proper ISO-Z. Harmless (different singer), but don't hand-write
+  timestamps into attempt docs.
 
 ## Resolved platform issues (same day)
 
