@@ -1,0 +1,95 @@
+{
+  "value": "SONG_LANGUAGE",
+  "label": "Lyrics Language",
+  "description": "Language of a song's lyrics. Values are ISO 639-1 codes where possible. User-extensible (mutable).",
+  "mutable": true,
+  "extensible": true,
+  "terms": [
+    {
+      "value": "EN",
+      "label": "English",
+      "aliases": [
+        "english"
+      ],
+      "sort_order": 1
+    },
+    {
+      "value": "DE",
+      "label": "German",
+      "aliases": [
+        "german",
+        "deutsch"
+      ],
+      "sort_order": 2
+    },
+    {
+      "value": "FR",
+      "label": "French",
+      "aliases": [
+        "french"
+      ],
+      "sort_order": 3
+    },
+    {
+      "value": "ES",
+      "label": "Spanish",
+      "aliases": [
+        "spanish"
+      ],
+      "sort_order": 4
+    },
+    {
+      "value": "IT",
+      "label": "Italian",
+      "aliases": [
+        "italian"
+      ],
+      "sort_order": 5
+    },
+    {
+      "value": "SV",
+      "label": "Swedish",
+      "aliases": [
+        "swedish"
+      ],
+      "sort_order": 6
+    },
+    {
+      "value": "NL",
+      "label": "Dutch",
+      "aliases": [
+        "dutch"
+      ],
+      "sort_order": 7
+    },
+    {
+      "value": "PT",
+      "label": "Portuguese",
+      "aliases": [
+        "portuguese"
+      ],
+      "sort_order": 8
+    },
+    {
+      "value": "JA",
+      "label": "Japanese",
+      "aliases": [
+        "japanese"
+      ],
+      "sort_order": 9
+    },
+    {
+      "value": "KO",
+      "label": "Korean",
+      "aliases": [
+        "korean"
+      ],
+      "sort_order": 10
+    },
+    {
+      "value": "OTHER",
+      "label": "Other",
+      "sort_order": 99
+    }
+  ]
+}

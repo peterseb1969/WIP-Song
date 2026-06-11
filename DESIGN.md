@@ -201,6 +201,47 @@ would be candidates later).
    2 attempts, 1 progress doc — verify term + reference resolution
 No circular references → no draft mode needed.
 
+## UI Plan — v0.1 (approved by Peter 2026-06-11, Phase 4 gate)
+
+App identity: id `song`, path `/apps/song`, Express port **3016**, Vite port **5181**.
+
+**Audio architecture:** recording via MediaRecorder (webm/opus); live pitch
+detection via Web Audio autocorrelation (client-side, real-time); reference
+tones synthesized via Web Audio; backing tracks via `<audio>`; import parsing
+server-side (.kar/MIDI first), normalizing to the canonical note-event form.
+
+**Pages:** Home (continue-practicing dashboard, landing) · Songs (library
+cards + import flow + song detail with melody preview and backing playback) ·
+Lessons (cards with progress → exercise sequence) · Practice (full-screen
+exercise player: target notes, live pitch trace, record → score reveal) ·
+Progress (attempt history + playback, lesson progress over time) · Profile
+(display name, voice type, vocal range). AskBar overlay retained from scaffold.
+
+**Navigation:** top bar (Songs / Lessons / Progress + profile chip). Peter:
+may switch to a sidebar later; top nav for v1.
+
+**Note rendering — two synchronized views (Peter is a guitarist):**
+- Piano-roll strip (SVG, custom, no new dependency): time × MIDI pitch, note
+  bars with syllables; doubles as the practice overlay surface (live pitch
+  trace) and attempt review (target vs transcription).
+- Fretboard panel (SVG): 6 strings, standard tuning EADGBE, shows all playable
+  positions of the current target note (lowest emphasized), synced to the
+  playhead; note-by-note stepping in song detail.
+- View toggle + stacked mode; preference persisted in SONG_SINGER.preferences.
+- Pitch scoring treats octave-equivalent notes as partial credit (guitarists
+  sing an octave off from where they play).
+
+**v1 scope cuts (deliberate):** no lesson/exercise authoring UI (seeded
+curriculum only); no duets/sharing; standard tuning only, no capo, no chord
+shapes, no tab-timeline view; no sheet-music notation (VexFlow/abcjs would be
+a cased dependency later); English UI only.
+
+**Build order (one commit each):** 1 foundation (libs, providers, proxy,
+tokens, nav, BootstrapGate) · 2 profile/singer context · 3 songs + detail +
+both note renderers · 4 import flow (needs sample .kar from Peter) ·
+5 practice player drills · 6 practice song sections · 7 lessons + progress ·
+8 progress page + playback · 9 tests, containerization, wip-app.yaml, docs.
+
 ## Noted for later (not v1)
 
 - SONG_SKILL terminology + per-skill scoring (fixed score fields suffice now)

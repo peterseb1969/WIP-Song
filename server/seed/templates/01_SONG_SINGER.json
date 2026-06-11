@@ -1,0 +1,61 @@
+{
+  "value": "SONG_SINGER",
+  "label": "Singer",
+  "description": "User profile for a singer. One document per user, keyed by the OIDC subject claim.",
+  "identity_fields": [
+    "subject"
+  ],
+  "fields": [
+    {
+      "name": "subject",
+      "label": "OIDC Subject",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "display_name",
+      "label": "Display Name",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "email",
+      "label": "Email",
+      "type": "string",
+      "semantic_type": "email"
+    },
+    {
+      "name": "voice_type",
+      "label": "Voice Type",
+      "type": "term",
+      "terminology_ref": "SONG_VOICE_TYPE"
+    },
+    {
+      "name": "range_low_midi",
+      "label": "Vocal Range Low (MIDI)",
+      "type": "integer",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 127.0
+      }
+    },
+    {
+      "name": "range_high_midi",
+      "label": "Vocal Range High (MIDI)",
+      "type": "integer",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 127.0
+      }
+    },
+    {
+      "name": "preferences",
+      "label": "Preferences",
+      "type": "object"
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "master_data"
+  }
+}

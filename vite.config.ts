@@ -15,10 +15,11 @@ export default defineConfig({
     // reach the dev server (CASE-375). Harmless on the host — the OS firewall
     // normally still gates external access.
     host: '0.0.0.0',
-    port: 5173,
+    port: 5181,
     proxy: {
-      [`${PREFIX}/api`]: 'http://localhost:3001',
-      [`${PREFIX}/wip`]: 'http://localhost:3001',
+      [`${PREFIX}/api`]: 'http://localhost:3016',
+      [`${PREFIX}/wip`]: 'http://localhost:3016',
+      [`${PREFIX}/server-api`]: 'http://localhost:3016',
     },
   },
 })

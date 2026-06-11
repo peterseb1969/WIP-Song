@@ -1,0 +1,32 @@
+{
+  "value": "SONG_DIFFICULTY",
+  "label": "Difficulty",
+  "description": "Difficulty rating for songs, exercises, and lessons.",
+  "terms": [
+    {
+      "value": "BEGINNER",
+      "label": "Beginner",
+      "sort_order": 1
+    },
+    {
+      "value": "EASY",
+      "label": "Easy",
+      "sort_order": 2
+    },
+    {
+      "value": "INTERMEDIATE",
+      "label": "Intermediate",
+      "sort_order": 3
+    },
+    {
+      "value": "ADVANCED",
+      "label": "Advanced",
+      "sort_order": 4
+    },
+    {
+      "value": "EXPERT",
+      "label": "Expert",
+      "sort_order": 5
+    }
+  ]
+}

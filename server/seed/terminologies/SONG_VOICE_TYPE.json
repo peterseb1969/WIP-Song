@@ -1,0 +1,53 @@
+{
+  "value": "SONG_VOICE_TYPE",
+  "label": "Voice Type",
+  "description": "Singer voice classification (soprano through bass, plus child voice).",
+  "terms": [
+    {
+      "value": "SOPRANO",
+      "label": "Soprano",
+      "sort_order": 1
+    },
+    {
+      "value": "MEZZO_SOPRANO",
+      "label": "Mezzo-soprano",
+      "aliases": [
+        "mezzo"
+      ],
+      "sort_order": 2
+    },
+    {
+      "value": "ALTO",
+      "label": "Alto",
+      "aliases": [
+        "contralto"
+      ],
+      "sort_order": 3
+    },
+    {
+      "value": "COUNTERTENOR",
+      "label": "Countertenor",
+      "sort_order": 4
+    },
+    {
+      "value": "TENOR",
+      "label": "Tenor",
+      "sort_order": 5
+    },
+    {
+      "value": "BARITONE",
+      "label": "Baritone",
+      "sort_order": 6
+    },
+    {
+      "value": "BASS",
+      "label": "Bass",
+      "sort_order": 7
+    },
+    {
+      "value": "CHILD",
+      "label": "Child voice",
+      "sort_order": 8
+    }
+  ]
+}

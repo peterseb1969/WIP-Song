@@ -1,0 +1,65 @@
+{
+  "value": "SONG_PROGRESS",
+  "label": "Lesson Progress",
+  "description": "A singer's state on a lesson. Exactly one document per (singer, lesson); every update is a new version, so progress history comes from WIP versioning.",
+  "identity_fields": [
+    "singer_ref",
+    "lesson_ref"
+  ],
+  "fields": [
+    {
+      "name": "singer_ref",
+      "label": "Singer",
+      "type": "reference",
+      "mandatory": true,
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_SINGER"
+      ]
+    },
+    {
+      "name": "lesson_ref",
+      "label": "Lesson",
+      "type": "reference",
+      "mandatory": true,
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_LESSON"
+      ]
+    },
+    {
+      "name": "status",
+      "label": "Status",
+      "type": "term",
+      "mandatory": true,
+      "terminology_ref": "SONG_PROGRESS_STATUS"
+    },
+    {
+      "name": "best_score",
+      "label": "Best Score",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 100.0
+      }
+    },
+    {
+      "name": "attempts_count",
+      "label": "Attempts Count",
+      "type": "integer",
+      "validation": {
+        "minimum": 0.0
+      }
+    },
+    {
+      "name": "completed_exercise_codes",
+      "label": "Completed Exercise Codes",
+      "type": "array",
+      "array_item_type": "string"
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "transaction"
+  }
+}

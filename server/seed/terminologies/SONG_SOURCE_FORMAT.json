@@ -1,0 +1,73 @@
+{
+  "value": "SONG_SOURCE_FORMAT",
+  "label": "Source Format",
+  "description": "File format of an imported song source (karaoke and audio formats).",
+  "terms": [
+    {
+      "value": "MIDI",
+      "label": "MIDI (.mid)",
+      "aliases": [
+        "mid"
+      ],
+      "sort_order": 1
+    },
+    {
+      "value": "KAR",
+      "label": "MIDI Karaoke (.kar)",
+      "sort_order": 2
+    },
+    {
+      "value": "ULTRASTAR_TXT",
+      "label": "UltraStar (.txt)",
+      "aliases": [
+        "ultrastar"
+      ],
+      "sort_order": 3
+    },
+    {
+      "value": "LRC",
+      "label": "Synced lyrics (.lrc)",
+      "sort_order": 4
+    },
+    {
+      "value": "CDG",
+      "label": "MP3+G karaoke (.cdg)",
+      "aliases": [
+        "mp3+g",
+        "mp3g"
+      ],
+      "sort_order": 5
+    },
+    {
+      "value": "MUSICXML",
+      "label": "MusicXML (.musicxml/.mxl)",
+      "aliases": [
+        "mxl",
+        "xml score"
+      ],
+      "sort_order": 6
+    },
+    {
+      "value": "MP3",
+      "label": "MP3 audio",
+      "sort_order": 7
+    },
+    {
+      "value": "WAV",
+      "label": "WAV audio",
+      "aliases": [
+        "wave"
+      ],
+      "sort_order": 8
+    },
+    {
+      "value": "OGG",
+      "label": "OGG audio",
+      "aliases": [
+        "ogg vorbis",
+        "opus"
+      ],
+      "sort_order": 9
+    }
+  ]
+}

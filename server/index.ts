@@ -2,12 +2,15 @@ import 'dotenv/config'  // Must be first — loads .env before any other module 
 import express from 'express'
 import cors from 'cors'
 import session from 'express-session'
+import { wipProxy } from '@wip/proxy'
 import { initAgent, ask } from './agent.js'
 import { initAuth, requireAuth, handleCallback, handleLogout } from './auth.js'
+import bootstrapRouter from './routes/bootstrap.js'
+import { WIP_BASE_URL } from './lib/wip-api.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const PORT = parseInt(process.env.PORT || '3001')
+const PORT = parseInt(process.env.PORT || '3016')
 // Path-prefix-ready for k8s/ingress (CASE-370). Net-zero for local dev:
 // APP_BASE_PATH unset → BASE_PATH '' → the router mounts at '/' and the session
 // cookie path is '/', identical to before.
@@ -18,7 +21,6 @@ const app = express()
 const router = express.Router()
 
 app.use(cors())
-app.use(express.json())
 
 // --- Session (required for OIDC auth). Cookie scoped to the app's base path
 // so sibling apps behind the same ingress don't share it. ---
@@ -40,6 +42,20 @@ router.get('/auth/logout', handleLogout)
 
 // --- Auth middleware (no-op when OIDC_ISSUER is not set) ---
 router.use(requireAuth())
+
+// --- WIP API proxy. MUST be mounted before express.json(): @wip/proxy
+// forwards raw request bodies, and a JSON parser ahead of it would consume
+// the stream and forward empty bodies (see docs/technology-stack.md §4). ---
+router.use('/wip', wipProxy({
+  baseUrl: WIP_BASE_URL,
+  apiKey: process.env.WIP_API_KEY || '',
+}))
+
+// JSON parsing for the app's own routes — AFTER the proxy.
+router.use(express.json())
+
+// --- Bootstrap status/run (offer-on-empty / use-on-exists, see CLAUDE.md) ---
+router.use('/server-api', bootstrapRouter)
 
 // --- Health ---
 router.get('/api/health', (_req, res) => {

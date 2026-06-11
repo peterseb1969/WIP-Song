@@ -1,0 +1,80 @@
+{
+  "value": "SONG_EXERCISE",
+  "label": "Exercise",
+  "description": "A practice exercise: a drill with target notes, or a section of a song to sing. App rule: SONG_SECTION exercises set song_ref; drill types set target_notes.",
+  "identity_fields": [
+    "code"
+  ],
+  "fields": [
+    {
+      "name": "code",
+      "label": "Exercise Code",
+      "type": "string",
+      "mandatory": true,
+      "metadata": {
+        "note": "Stable slug, e.g. 'scale-c-major-1oct'."
+      }
+    },
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "exercise_type",
+      "label": "Exercise Type",
+      "type": "term",
+      "mandatory": true,
+      "terminology_ref": "SONG_EXERCISE_TYPE"
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "string"
+    },
+    {
+      "name": "difficulty",
+      "label": "Difficulty",
+      "type": "term",
+      "terminology_ref": "SONG_DIFFICULTY"
+    },
+    {
+      "name": "target_notes",
+      "label": "Target Notes",
+      "type": "object",
+      "metadata": {
+        "note": "Canonical note events to match: {tempo_bpm?, events: [{midi, start_ms, duration_ms, syllable?}]}"
+      }
+    },
+    {
+      "name": "song_ref",
+      "label": "Song",
+      "type": "reference",
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_TRACK"
+      ]
+    },
+    {
+      "name": "section_start_ms",
+      "label": "Section Start (ms)",
+      "type": "integer",
+      "validation": {
+        "minimum": 0.0
+      }
+    },
+    {
+      "name": "section_end_ms",
+      "label": "Section End (ms)",
+      "type": "integer",
+      "validation": {
+        "minimum": 0.0
+      }
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "master_data"
+  }
+}

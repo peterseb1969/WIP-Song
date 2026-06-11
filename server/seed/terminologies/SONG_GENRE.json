@@ -1,0 +1,79 @@
+{
+  "value": "SONG_GENRE",
+  "label": "Genre",
+  "description": "Music genre. User-extensible: users may add genres at runtime; entries can be removed (mutable).",
+  "mutable": true,
+  "extensible": true,
+  "terms": [
+    {
+      "value": "POP",
+      "label": "Pop",
+      "sort_order": 1
+    },
+    {
+      "value": "ROCK",
+      "label": "Rock",
+      "sort_order": 2
+    },
+    {
+      "value": "FOLK",
+      "label": "Folk",
+      "sort_order": 3
+    },
+    {
+      "value": "CLASSICAL",
+      "label": "Classical",
+      "sort_order": 4
+    },
+    {
+      "value": "JAZZ",
+      "label": "Jazz",
+      "sort_order": 5
+    },
+    {
+      "value": "MUSICAL",
+      "label": "Musical / Show tunes",
+      "aliases": [
+        "show tunes"
+      ],
+      "sort_order": 6
+    },
+    {
+      "value": "CHILDREN",
+      "label": "Children's songs",
+      "aliases": [
+        "kids"
+      ],
+      "sort_order": 7
+    },
+    {
+      "value": "HYMN",
+      "label": "Hymn / Sacred",
+      "aliases": [
+        "sacred",
+        "gospel"
+      ],
+      "sort_order": 8
+    },
+    {
+      "value": "COUNTRY",
+      "label": "Country",
+      "sort_order": 9
+    },
+    {
+      "value": "BLUES",
+      "label": "Blues",
+      "sort_order": 10
+    },
+    {
+      "value": "SCHLAGER",
+      "label": "Schlager",
+      "sort_order": 11
+    },
+    {
+      "value": "OTHER",
+      "label": "Other",
+      "sort_order": 99
+    }
+  ]
+}

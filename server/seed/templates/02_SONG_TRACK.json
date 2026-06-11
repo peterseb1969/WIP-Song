@@ -1,0 +1,125 @@
+{
+  "value": "SONG_TRACK",
+  "label": "Song",
+  "description": "A song: metadata, original imported source file, audio files (full mix, backing track), and the canonical parsed melody as note events {midi, start_ms, duration_ms, syllable?}.",
+  "identity_fields": [
+    "title",
+    "artist"
+  ],
+  "fields": [
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "artist",
+      "label": "Artist",
+      "type": "string",
+      "mandatory": true,
+      "metadata": {
+        "note": "Use 'Traditional' or 'Unknown' rather than leaving blank — artist is part of identity."
+      }
+    },
+    {
+      "name": "language",
+      "label": "Lyrics Language",
+      "type": "term",
+      "terminology_ref": "SONG_LANGUAGE"
+    },
+    {
+      "name": "genre",
+      "label": "Genre",
+      "type": "term",
+      "terminology_ref": "SONG_GENRE"
+    },
+    {
+      "name": "difficulty",
+      "label": "Difficulty",
+      "type": "term",
+      "terminology_ref": "SONG_DIFFICULTY"
+    },
+    {
+      "name": "musical_key",
+      "label": "Musical Key",
+      "type": "term",
+      "terminology_ref": "SONG_MUSICAL_KEY"
+    },
+    {
+      "name": "duration_seconds",
+      "label": "Duration (s)",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0
+      }
+    },
+    {
+      "name": "tempo_bpm",
+      "label": "Tempo (BPM)",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0
+      }
+    },
+    {
+      "name": "lyrics_text",
+      "label": "Lyrics",
+      "type": "string"
+    },
+    {
+      "name": "source_format",
+      "label": "Source Format",
+      "type": "term",
+      "terminology_ref": "SONG_SOURCE_FORMAT"
+    },
+    {
+      "name": "original_file",
+      "label": "Original Import File",
+      "type": "file",
+      "file_config": {
+        "allowed_types": [
+          "*/*"
+        ],
+        "max_size_mb": 100.0,
+        "multiple": false
+      }
+    },
+    {
+      "name": "audio_full",
+      "label": "Full Mix Audio",
+      "type": "file",
+      "file_config": {
+        "allowed_types": [
+          "audio/*"
+        ],
+        "max_size_mb": 100.0,
+        "multiple": false
+      }
+    },
+    {
+      "name": "audio_backing",
+      "label": "Backing Track Audio",
+      "type": "file",
+      "file_config": {
+        "allowed_types": [
+          "audio/*"
+        ],
+        "max_size_mb": 100.0,
+        "multiple": false
+      }
+    },
+    {
+      "name": "melody",
+      "label": "Canonical Melody",
+      "type": "object",
+      "metadata": {
+        "note": "Canonical note events: {tempo_bpm?, events: [{midi, start_ms, duration_ms, syllable?}]}"
+      }
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "master_data"
+  }
+}
