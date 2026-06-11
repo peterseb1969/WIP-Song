@@ -6,6 +6,7 @@ import { wipProxy } from '@wip/proxy'
 import { initAgent, ask } from './agent.js'
 import { initAuth, requireAuth, handleCallback, handleLogout } from './auth.js'
 import bootstrapRouter from './routes/bootstrap.js'
+import importRouter from './routes/import.js'
 import { WIP_BASE_URL } from './lib/wip-api.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -56,6 +57,9 @@ router.use(express.json())
 
 // --- Bootstrap status/run (offer-on-empty / use-on-exists, see CLAUDE.md) ---
 router.use('/server-api', bootstrapRouter)
+
+// --- Song import parsing (.mid/.kar → canonical note events) ---
+router.use('/server-api', importRouter)
 
 // --- Health ---
 router.get('/api/health', (_req, res) => {

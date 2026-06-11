@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryDocuments } from '@wip/react'
 import { Loader2, ListMusic, Upload, AlertTriangle } from 'lucide-react'
+import ImportDialog from '../components/ImportDialog'
 import type { SongData } from '../lib/types'
 
 function Badge({ children, tone = 'primary' }: { children: React.ReactNode; tone?: 'primary' | 'neutral' }) {
@@ -18,6 +20,7 @@ function Badge({ children, tone = 'primary' }: { children: React.ReactNode; tone
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
 
 export default function SongsPage() {
+  const [importing, setImporting] = useState(false)
   // useQueryDocuments, not useDocuments: the plain list endpoint returns every
   // document VERSION as its own row (a song edited once appears twice); the
   // query endpoint returns latest versions only.
@@ -38,13 +41,14 @@ export default function SongsPage() {
         </div>
         <button
           type="button"
-          disabled
-          title="Import arrives in build phase 4"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white opacity-50 disabled:cursor-not-allowed"
+          onClick={() => setImporting(true)}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           <span className="flex items-center gap-2"><Upload className="h-4 w-4" /> Import</span>
         </button>
       </header>
+
+      {importing && <ImportDialog onClose={() => setImporting(false)} />}
 
       {isLoading && (
         <div className="flex items-center gap-3 py-12 text-text-muted">
