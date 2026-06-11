@@ -21,3 +21,10 @@ export function serverApiUrl(path: string): string {
 
 /** Base URL for @wip/client through the server-side proxy (@wip/proxy). */
 export const WIP_PROXY_BASE = `${BASE}wip`
+
+/**
+ * WIP namespace for document writes. The runtime API key is single-namespace
+ * scoped (the server derives it automatically), but @wip/client's request
+ * types require it explicitly. Keep in sync with the server's WIP_NAMESPACE.
+ */
+export const WIP_NAMESPACE = import.meta.env.VITE_WIP_NAMESPACE || 'dev-wip-song'

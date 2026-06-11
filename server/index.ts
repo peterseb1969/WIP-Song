@@ -78,13 +78,26 @@ router.post('/api/ask', async (req, res) => {
   }
 })
 
-// --- User info (for authenticated apps) ---
+// --- User info. Three identity sources in priority order (deployable-app
+// contract, "Skip 7"): gateway-injected headers (wip-router hybrid auth) →
+// OIDC session → local-dev fallback so standalone dev still has a stable
+// singer identity. ---
 router.get('/api/me', (req, res) => {
-  if (req.session.user) {
-    res.json(req.session.user)
-  } else {
-    res.json({ anonymous: true })
+  const gatewayUser = req.header('X-WIP-User')
+  if (gatewayUser) {
+    res.json({
+      sub: gatewayUser,
+      name: gatewayUser,
+      groups: (req.header('X-WIP-Groups') || '').split(',').filter(Boolean),
+      source: 'gateway',
+    })
+    return
   }
+  if (req.session.user) {
+    res.json({ ...req.session.user, source: 'oidc' })
+    return
+  }
+  res.json({ sub: 'local-dev', name: 'Local Singer', anonymous: true, source: 'fallback' })
 })
 
 // --- Production: serve the built SPA from this router so the app is

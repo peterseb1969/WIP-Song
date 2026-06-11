@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { BootstrapGate } from './components/BootstrapGate'
+import { SingerProvider } from './contexts/SingerContext'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
+import ProfilePage from './pages/ProfilePage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
@@ -12,8 +14,9 @@ const BASENAME = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'
 export default function App() {
   return (
     <BootstrapGate>
-      <BrowserRouter basename={BASENAME}>
-        <Routes>
+      <SingerProvider>
+        <BrowserRouter basename={BASENAME}>
+          <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<HomePage />} />
             <Route
@@ -28,13 +31,11 @@ export default function App() {
               path="/progress"
               element={<PlaceholderPage title="Progress" comingIn="Progress history arrives in build phase 8." />}
             />
-            <Route
-              path="/profile"
-              element={<PlaceholderPage title="Profile" comingIn="Singer profile arrives in build phase 2." />}
-            />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+        </BrowserRouter>
+      </SingerProvider>
     </BootstrapGate>
   )
 }
