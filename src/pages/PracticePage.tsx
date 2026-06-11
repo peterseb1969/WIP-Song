@@ -8,8 +8,9 @@ import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
-import { midiToNoteName } from '../lib/music'
-import type { ExerciseData, LessonData } from '../lib/types'
+import { midiToNoteName, type NoteEvent } from '../lib/music'
+import { BASE } from '../lib/config'
+import type { ExerciseData, LessonData, SongData } from '../lib/types'
 
 type Phase = 'idle' | 'listening' | 'recording' | 'saving' | 'done'
 
@@ -29,7 +30,18 @@ export default function PracticePage() {
   const lessonId = searchParams.get('lesson')
   const { data: doc, isLoading, error } = useDocument(id ?? '')
   const exercise = doc?.data as ExerciseData | undefined
-  const targets = exercise?.target_notes?.events ?? []
+
+  // SONG_SECTION exercises carry no target_notes — their targets are a slice
+  // of the referenced song's melody, re-based to t=0.
+  const { data: songDoc, isLoading: songLoading } = useDocument(exercise?.song_ref ?? '')
+  const song = songDoc?.data as SongData | undefined
+  const sectionStart = exercise?.section_start_ms ?? 0
+  const sectionEnd = exercise?.section_end_ms ?? Number.MAX_SAFE_INTEGER
+  const targets: NoteEvent[] =
+    exercise?.target_notes?.events ??
+    (song?.melody?.events ?? [])
+      .filter((e) => e.start_ms >= sectionStart && e.start_ms < sectionEnd)
+      .map((e) => ({ ...e, start_ms: e.start_ms - sectionStart }))
 
   // Lesson context (when launched from a lesson): progress writes + next-exercise.
   const { data: lessonDoc } = useDocument(lessonId ?? '')
@@ -59,14 +71,38 @@ export default function PracticePage() {
   const stopListenRef = useRef<(() => void) | null>(null)
   const autoStopRef = useRef<number | null>(null)
   const stoppingRef = useRef(false)
+  const backingRef = useRef<HTMLAudioElement | null>(null)
 
   const totalMs = targets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
+
+  // Backing-track slice playback for song sections with audio.
+  const hasBacking = !!song?.audio_backing
+  const stopBacking = () => {
+    backingRef.current?.pause()
+    backingRef.current = null
+  }
+  const playBackingSlice = (onEnd?: () => void) => {
+    if (!song?.audio_backing) return
+    const audio = new Audio(`${BASE}wip/files/${song.audio_backing}/content`)
+    audio.currentTime = sectionStart / 1000
+    backingRef.current = audio
+    const stopAt = Math.min(sectionEnd, sectionStart + totalMs + 1500) / 1000
+    audio.ontimeupdate = () => {
+      if (audio.currentTime >= stopAt) {
+        stopBacking()
+        onEnd?.()
+      }
+    }
+    audio.onended = () => onEnd?.()
+    void audio.play()
+  }
 
   // Clean up audio on unmount / navigation.
   useEffect(
     () => () => {
       stopListenRef.current?.()
       sessionRef.current?.cancel()
+      backingRef.current?.pause()
       if (autoStopRef.current) window.clearTimeout(autoStopRef.current)
     },
     [],
@@ -75,13 +111,21 @@ export default function PracticePage() {
   const handleListen = () => {
     if (phase === 'listening') return
     setPhase('listening')
-    stopListenRef.current = playNotes(targets, () => setPhase((p) => (p === 'listening' ? 'idle' : p)))
+    const done = () => setPhase((p) => (p === 'listening' ? 'idle' : p))
+    if (hasBacking) {
+      playBackingSlice(done)
+      stopListenRef.current = () => stopBacking()
+    } else {
+      stopListenRef.current = playNotes(targets, done)
+    }
   }
 
   const finishRecording = useCallback(async () => {
     if (stoppingRef.current || !sessionRef.current) return
     stoppingRef.current = true
     if (autoStopRef.current) window.clearTimeout(autoStopRef.current)
+    backingRef.current?.pause()
+    backingRef.current = null
 
     const { blob, samples, durationMs } = await sessionRef.current.stop()
     sessionRef.current = null
@@ -151,6 +195,9 @@ export default function PracticePage() {
       })
       sessionRef.current = session
       setPhase('recording')
+      // Karaoke mode: backing track plays under the recording (use headphones —
+      // echo cancellation helps, but speaker bleed can color the pitch trace).
+      if (hasBacking) playBackingSlice()
       // Auto-stop a moment after the target timeline ends.
       autoStopRef.current = window.setTimeout(() => void finishRecording(), totalMs + 1500)
     } catch (err) {
@@ -178,7 +225,7 @@ export default function PracticePage() {
   // Fresh state when navigating to the next exercise in a lesson.
   useEffect(() => reset(), [id, reset])
 
-  if (isLoading) {
+  if (isLoading || (exercise?.song_ref && songLoading)) {
     return (
       <div className="flex items-center gap-3 py-12 text-text-muted">
         <Loader2 className="h-5 w-5 animate-spin" /> Loading exercise…
@@ -198,9 +245,9 @@ export default function PracticePage() {
   if (!targets.length) {
     return (
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-        <h3 className="font-medium text-primary">Song-section practice not built yet</h3>
+        <h3 className="font-medium text-primary">Nothing to practice</h3>
         <p className="mt-1 text-sm text-text-muted">
-          This exercise practices part of a song — that player arrives in build phase 6.{' '}
+          This exercise has no target notes{exercise.song_ref ? ' in its song section (the song may lack melody data)' : ''}.{' '}
           <Link to="/practice" className="text-primary hover:underline">Back to practice</Link>
         </p>
       </div>
