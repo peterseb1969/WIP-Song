@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useDocument, useCreateDocument, useWipClient } from '@wip/react'
-import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check } from 'lucide-react'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { useDocument, useQueryDocuments, useCreateDocument, useWipClient } from '@wip/react'
+import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check, ChevronRight } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import { useSinger } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
+import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
 import { midiToNoteName } from '../lib/music'
-import type { ExerciseData } from '../lib/types'
+import type { ExerciseData, LessonData } from '../lib/types'
 
 type Phase = 'idle' | 'listening' | 'recording' | 'saving' | 'done'
 
@@ -24,9 +25,24 @@ function ScoreRing({ label, value }: { label: string; value: number }) {
 
 export default function PracticePage() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
+  const lessonId = searchParams.get('lesson')
   const { data: doc, isLoading, error } = useDocument(id ?? '')
   const exercise = doc?.data as ExerciseData | undefined
   const targets = exercise?.target_notes?.events ?? []
+
+  // Lesson context (when launched from a lesson): progress writes + next-exercise.
+  const { data: lessonDoc } = useDocument(lessonId ?? '')
+  const lesson = lessonDoc?.data as LessonData | undefined
+  const exerciseCatalog = useQueryDocuments({ template_id: 'SONG_EXERCISE', filters: [], page_size: 100 })
+  const codeOfRef = new Map(
+    (exerciseCatalog.data?.items ?? []).map((d) => [d.document_id, (d.data as unknown as ExerciseData).code]),
+  )
+  const nextExerciseRef = (() => {
+    if (!lesson || !id) return null
+    const idx = lesson.exercise_refs.indexOf(id)
+    return idx >= 0 ? lesson.exercise_refs[idx + 1] ?? null : null
+  })()
 
   const { singerId } = useSinger()
   const wip = useWipClient()
@@ -99,6 +115,19 @@ export default function PracticePage() {
         },
         created_by: 'wip-song-app',
       })
+      // Lesson context: upsert the singer×lesson progress doc (new version).
+      if (lessonId && lesson && singerId && exercise) {
+        const lessonExerciseCodes = lesson.exercise_refs
+          .map((ref) => codeOfRef.get(ref))
+          .filter((c): c is string => !!c)
+        await updateLessonProgress(wip, {
+          singerId,
+          lessonId,
+          exerciseCode: exercise.code,
+          score: result.overall_score,
+          lessonExerciseCodes,
+        })
+      }
       setPhase('done')
     } catch (err) {
       setSaveError((err as Error).message)
@@ -106,7 +135,8 @@ export default function PracticePage() {
     } finally {
       stoppingRef.current = false
     }
-  }, [targets, wip, createAttempt, singerId, id, exercise?.title])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- codeOfRef is rebuilt per render from the catalog query
+  }, [targets, wip, createAttempt, singerId, id, exercise, lessonId, lesson])
 
   const handleRecord = async () => {
     stopListenRef.current?.()
@@ -124,19 +154,29 @@ export default function PracticePage() {
       // Auto-stop a moment after the target timeline ends.
       autoStopRef.current = window.setTimeout(() => void finishRecording(), totalMs + 1500)
     } catch (err) {
-      setSaveError(`Microphone unavailable: ${(err as Error).message}`)
+      const e = err as DOMException
+      const hint =
+        e.name === 'NotFoundError'
+          ? 'No microphone found — connect one (or check system audio input settings) and try again.'
+          : e.name === 'NotAllowedError'
+            ? 'Microphone access was denied — allow it in the browser address-bar permissions and try again.'
+            : `Microphone unavailable: ${e.message}`
+      setSaveError(hint)
       setPhase('idle')
     }
   }
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setPhase('idle')
     setScores(null)
     setSaveError(null)
     setRecordMs(null)
     traceRef.current = []
     setTraceTick((t) => t + 1)
-  }
+  }, [])
+
+  // Fresh state when navigating to the next exercise in a lesson.
+  useEffect(() => reset(), [id, reset])
 
   if (isLoading) {
     return (
@@ -276,8 +316,28 @@ export default function PracticePage() {
           </div>
 
           {phase === 'done' && !saveError && (
-            <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-sm text-success">
-              <Check className="h-4 w-4" /> Attempt saved with its recording.
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-sm text-success">
+              <span className="flex items-center gap-2">
+                <Check className="h-4 w-4" /> Attempt saved
+                {lessonId && scores.overall_score >= COMPLETION_SCORE && ' — exercise completed!'}
+                {lessonId && scores.overall_score < COMPLETION_SCORE && ` — reach ${COMPLETION_SCORE} to complete this exercise.`}
+              </span>
+              {lessonId && nextExerciseRef && (
+                <Link
+                  to={`/practice/${nextExerciseRef}?lesson=${lessonId}`}
+                  className="flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  Next exercise <ChevronRight className="h-3 w-3" />
+                </Link>
+              )}
+              {lessonId && !nextExerciseRef && (
+                <Link
+                  to={`/lessons/${lessonId}`}
+                  className="flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  Back to lesson <ChevronRight className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           )}
         </section>
