@@ -8,11 +8,37 @@ import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
-import { midiToNoteName, type NoteEvent } from '../lib/music'
+import { midiToNoteName, midiToFrequency, type NoteEvent } from '../lib/music'
 import { BASE } from '../lib/config'
 import type { ExerciseData, LessonData, SongData } from '../lib/types'
 
 type Phase = 'idle' | 'listening' | 'recording' | 'saving' | 'done'
+
+/** Live tuner readout while recording: note name, cents deviation, Hz. */
+function Tuner({ sample }: { sample: PitchSample | null }) {
+  if (!sample) {
+    return (
+      <div className="flex w-36 flex-col items-center rounded-lg border border-gray-200 bg-surface p-3 shadow-sm">
+        <span className="text-2xl font-semibold text-text-muted">—</span>
+        <span className="text-xs text-text-muted">listening…</span>
+      </div>
+    )
+  }
+  const nearest = Math.round(sample.midi)
+  const cents = Math.round((sample.midi - nearest) * 100)
+  const inTune = Math.abs(cents) <= 15
+  return (
+    <div className="flex w-36 flex-col items-center rounded-lg border border-gray-200 bg-surface p-3 shadow-sm">
+      <span className={`text-2xl font-semibold ${inTune ? 'text-success' : 'text-accent'}`}>
+        {midiToNoteName(nearest)}
+      </span>
+      <span className={`text-sm font-medium ${inTune ? 'text-success' : 'text-accent'}`}>
+        {cents === 0 ? 'in tune' : `${cents > 0 ? '+' : ''}${cents}¢`}
+      </span>
+      <span className="text-xs text-text-muted">{midiToFrequency(sample.midi).toFixed(1)} Hz</span>
+    </div>
+  )
+}
 
 function ScoreRing({ label, value }: { label: string; value: number }) {
   const tone = value >= 80 ? 'text-success' : value >= 50 ? 'text-accent' : 'text-danger'
@@ -67,6 +93,7 @@ export default function PracticePage() {
 
   const traceRef = useRef<PitchSample[]>([])
   const [traceTick, setTraceTick] = useState(0)
+  const lastSampleRef = useRef<{ sample: PitchSample; at: number } | null>(null)
   const sessionRef = useRef<RecordingSession | null>(null)
   const stopListenRef = useRef<(() => void) | null>(null)
   const autoStopRef = useRef<number | null>(null)
@@ -192,6 +219,7 @@ export default function PracticePage() {
     try {
       const session = await startRecording((s) => {
         traceRef.current.push(s)
+        lastSampleRef.current = { sample: s, at: performance.now() }
         setRecordMs(s.t_ms)
         setTraceTick((t) => t + 1)
       })
@@ -226,6 +254,14 @@ export default function PracticePage() {
 
   // Fresh state when navigating to the next exercise in a lesson.
   useEffect(() => reset(), [id, reset])
+
+  // Re-render heartbeat while recording so the tuner clears during silence
+  // (pitch samples only arrive while the singer is voicing).
+  useEffect(() => {
+    if (phase !== 'recording') return
+    const t = window.setInterval(() => setTraceTick((x) => x + 1), 200)
+    return () => window.clearInterval(t)
+  }, [phase])
 
   if (isLoading || (exercise?.song_ref && songLoading)) {
     return (
@@ -324,9 +360,18 @@ export default function PracticePage() {
         )}
 
         {phase === 'recording' && (
-          <span className="flex items-center gap-2 text-sm text-danger">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-danger" /> Recording — sing now
-          </span>
+          <>
+            <span className="flex items-center gap-2 text-sm text-danger">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-danger" /> Recording — sing now
+            </span>
+            <Tuner
+              sample={
+                lastSampleRef.current && performance.now() - lastSampleRef.current.at < 400
+                  ? lastSampleRef.current.sample
+                  : null
+              }
+            />
+          </>
         )}
         {phase === 'saving' && (
           <span className="flex items-center gap-2 text-sm text-text-muted">
