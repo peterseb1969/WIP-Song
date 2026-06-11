@@ -1,0 +1,25 @@
+[
+  {
+    "data": {
+      "attempt_id": "11111111-2222-4333-8444-555555555555",
+      "singer_ref": "019eb817-60bf-7ade-84e7-710bfa761c82",
+      "exercise_ref": "019eb818-6d0e-7207-b9ad-2a65bd5bd1bb",
+      "recorded_at": "2026-06-11T19:10:00",
+      "recording_file": "019eb817-d45b-7272-8108-80d49a752c15",
+      "transcription": {
+        "events": [
+          {
+            "midi": 69,
+            "start_ms": 120,
+            "duration_ms": 1800
+          }
+        ]
+      },
+      "pitch_score": 92.5,
+      "rhythm_score": 88,
+      "overall_score": 90,
+      "duration_seconds": 2.1
+    },
+    "created_by": "apikey:legacy"
+  }
+]

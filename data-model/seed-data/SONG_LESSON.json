@@ -1,0 +1,15 @@
+[
+  {
+    "data": {
+      "code": "beginner-1",
+      "title": "First steps: pitch and a folk song",
+      "description": "Warm up with pitch matching, then sing a verse.",
+      "difficulty": "BEGINNER",
+      "exercise_refs": [
+        "019eb818-6d0e-7207-b9ad-2a65bd5bd1bb",
+        "019eb818-72ee-7fe4-b55d-29a022d8072d"
+      ]
+    },
+    "created_by": "apikey:legacy"
+  }
+]

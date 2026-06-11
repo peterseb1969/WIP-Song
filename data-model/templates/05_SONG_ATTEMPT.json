@@ -1,0 +1,118 @@
+{
+  "value": "SONG_ATTEMPT",
+  "label": "Practice Attempt",
+  "description": "One recorded practice take: audio recording, transcribed notes, and scores. Identity is the app-minted attempt_id so later re-scoring versions the same document. App rule: exactly one of exercise_ref / song_ref is set.",
+  "identity_fields": [
+    "attempt_id"
+  ],
+  "fields": [
+    {
+      "name": "attempt_id",
+      "label": "Attempt ID",
+      "type": "string",
+      "mandatory": true,
+      "metadata": {
+        "note": "App-minted UUID."
+      }
+    },
+    {
+      "name": "singer_ref",
+      "label": "Singer",
+      "type": "reference",
+      "mandatory": true,
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_SINGER"
+      ]
+    },
+    {
+      "name": "exercise_ref",
+      "label": "Exercise",
+      "type": "reference",
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_EXERCISE"
+      ]
+    },
+    {
+      "name": "song_ref",
+      "label": "Song",
+      "type": "reference",
+      "reference_type": "document",
+      "target_templates": [
+        "SONG_TRACK"
+      ]
+    },
+    {
+      "name": "recorded_at",
+      "label": "Recorded At",
+      "type": "datetime",
+      "mandatory": true
+    },
+    {
+      "name": "recording_file",
+      "label": "Recording",
+      "type": "file",
+      "mandatory": true,
+      "file_config": {
+        "allowed_types": [
+          "audio/*",
+          "video/webm",
+          "application/octet-stream"
+        ],
+        "max_size_mb": 100.0,
+        "multiple": false
+      },
+      "metadata": {
+        "note": "octet-stream allowed as a workaround: the file store's global MIME allowlist currently rejects audio/* uploads. Tighten to audio/* once the platform allowlist includes audio."
+      }
+    },
+    {
+      "name": "transcription",
+      "label": "Transcription",
+      "type": "object",
+      "metadata": {
+        "note": "Detected canonical note events: {events: [{midi, start_ms, duration_ms}]}"
+      }
+    },
+    {
+      "name": "pitch_score",
+      "label": "Pitch Score",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 100.0
+      }
+    },
+    {
+      "name": "rhythm_score",
+      "label": "Rhythm Score",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 100.0
+      }
+    },
+    {
+      "name": "overall_score",
+      "label": "Overall Score",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0,
+        "maximum": 100.0
+      }
+    },
+    {
+      "name": "duration_seconds",
+      "label": "Duration (s)",
+      "type": "number",
+      "validation": {
+        "minimum": 0.0
+      }
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "transaction"
+  }
+}

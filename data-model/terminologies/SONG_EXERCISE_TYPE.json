@@ -1,0 +1,49 @@
+{
+  "value": "SONG_EXERCISE_TYPE",
+  "label": "Exercise Type",
+  "description": "Kind of practice exercise (pitch matching, scales, rhythm, song sections, etc.).",
+  "terms": [
+    {
+      "value": "PITCH_MATCH",
+      "label": "Pitch matching",
+      "description": "Match single sustained notes played as reference.",
+      "sort_order": 1
+    },
+    {
+      "value": "INTERVAL",
+      "label": "Intervals",
+      "description": "Sing the second note of a played interval.",
+      "sort_order": 2
+    },
+    {
+      "value": "SCALE",
+      "label": "Scales",
+      "description": "Sing a scale pattern up/down.",
+      "sort_order": 3
+    },
+    {
+      "value": "RHYTHM",
+      "label": "Rhythm",
+      "description": "Reproduce a rhythmic pattern on one pitch.",
+      "sort_order": 4
+    },
+    {
+      "value": "SONG_SECTION",
+      "label": "Song section",
+      "description": "Sing a slice of a song (verse, chorus) against the backing track.",
+      "sort_order": 5
+    },
+    {
+      "value": "BREATHING",
+      "label": "Breathing",
+      "description": "Breath control exercise (sustained notes, phrases).",
+      "sort_order": 6
+    },
+    {
+      "value": "FREE_PRACTICE",
+      "label": "Free practice",
+      "description": "Unstructured singing, full song or improvisation.",
+      "sort_order": 7
+    }
+  ]
+}

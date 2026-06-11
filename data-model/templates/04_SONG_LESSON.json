@@ -1,0 +1,45 @@
+{
+  "value": "SONG_LESSON",
+  "label": "Lesson",
+  "description": "An ordered curriculum unit: a sequence of exercises. Editing the sequence creates a new version (curriculum history).",
+  "identity_fields": [
+    "code"
+  ],
+  "fields": [
+    {
+      "name": "code",
+      "label": "Lesson Code",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "string"
+    },
+    {
+      "name": "difficulty",
+      "label": "Difficulty",
+      "type": "term",
+      "terminology_ref": "SONG_DIFFICULTY"
+    },
+    {
+      "name": "exercise_refs",
+      "label": "Exercises (ordered)",
+      "type": "array",
+      "mandatory": true,
+      "array_item_type": "reference",
+      "array_template_ref": "SONG_EXERCISE"
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "master_data"
+  }
+}

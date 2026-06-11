@@ -1,0 +1,248 @@
+{
+  "value": "SONG_MUSICAL_KEY",
+  "label": "Musical Key",
+  "description": "The 24 major and minor keys. Enharmonic spellings (Db vs C#) are aliases of one term.",
+  "terms": [
+    {
+      "value": "C_MAJOR",
+      "label": "C Major",
+      "aliases": [
+        "C",
+        "Cmaj",
+        "C major"
+      ],
+      "sort_order": 1
+    },
+    {
+      "value": "C_SHARP_MAJOR",
+      "label": "C♯/D♭ Major",
+      "aliases": [
+        "C#",
+        "Db",
+        "C# major",
+        "Db major"
+      ],
+      "sort_order": 2
+    },
+    {
+      "value": "D_MAJOR",
+      "label": "D Major",
+      "aliases": [
+        "D",
+        "Dmaj",
+        "D major"
+      ],
+      "sort_order": 3
+    },
+    {
+      "value": "E_FLAT_MAJOR",
+      "label": "E♭ Major",
+      "aliases": [
+        "Eb",
+        "D#",
+        "Eb major",
+        "D# major"
+      ],
+      "sort_order": 4
+    },
+    {
+      "value": "E_MAJOR",
+      "label": "E Major",
+      "aliases": [
+        "E",
+        "Emaj",
+        "E major"
+      ],
+      "sort_order": 5
+    },
+    {
+      "value": "F_MAJOR",
+      "label": "F Major",
+      "aliases": [
+        "F",
+        "Fmaj",
+        "F major"
+      ],
+      "sort_order": 6
+    },
+    {
+      "value": "F_SHARP_MAJOR",
+      "label": "F♯/G♭ Major",
+      "aliases": [
+        "F#",
+        "Gb",
+        "F# major",
+        "Gb major"
+      ],
+      "sort_order": 7
+    },
+    {
+      "value": "G_MAJOR",
+      "label": "G Major",
+      "aliases": [
+        "G",
+        "Gmaj",
+        "G major"
+      ],
+      "sort_order": 8
+    },
+    {
+      "value": "A_FLAT_MAJOR",
+      "label": "A♭ Major",
+      "aliases": [
+        "Ab",
+        "G#",
+        "Ab major",
+        "G# major"
+      ],
+      "sort_order": 9
+    },
+    {
+      "value": "A_MAJOR",
+      "label": "A Major",
+      "aliases": [
+        "A",
+        "Amaj",
+        "A major"
+      ],
+      "sort_order": 10
+    },
+    {
+      "value": "B_FLAT_MAJOR",
+      "label": "B♭ Major",
+      "aliases": [
+        "Bb",
+        "A#",
+        "Bb major",
+        "A# major"
+      ],
+      "sort_order": 11
+    },
+    {
+      "value": "B_MAJOR",
+      "label": "B Major",
+      "aliases": [
+        "B",
+        "Bmaj",
+        "B major",
+        "H"
+      ],
+      "sort_order": 12
+    },
+    {
+      "value": "A_MINOR",
+      "label": "A Minor",
+      "aliases": [
+        "Am",
+        "Amin",
+        "A minor"
+      ],
+      "sort_order": 13
+    },
+    {
+      "value": "B_FLAT_MINOR",
+      "label": "B♭ Minor",
+      "aliases": [
+        "Bbm",
+        "A#m",
+        "Bb minor"
+      ],
+      "sort_order": 14
+    },
+    {
+      "value": "B_MINOR",
+      "label": "B Minor",
+      "aliases": [
+        "Bm",
+        "B minor",
+        "Hm"
+      ],
+      "sort_order": 15
+    },
+    {
+      "value": "C_MINOR",
+      "label": "C Minor",
+      "aliases": [
+        "Cm",
+        "C minor"
+      ],
+      "sort_order": 16
+    },
+    {
+      "value": "C_SHARP_MINOR",
+      "label": "C♯ Minor",
+      "aliases": [
+        "C#m",
+        "Dbm",
+        "C# minor"
+      ],
+      "sort_order": 17
+    },
+    {
+      "value": "D_MINOR",
+      "label": "D Minor",
+      "aliases": [
+        "Dm",
+        "D minor"
+      ],
+      "sort_order": 18
+    },
+    {
+      "value": "E_FLAT_MINOR",
+      "label": "E♭ Minor",
+      "aliases": [
+        "Ebm",
+        "D#m",
+        "Eb minor"
+      ],
+      "sort_order": 19
+    },
+    {
+      "value": "E_MINOR",
+      "label": "E Minor",
+      "aliases": [
+        "Em",
+        "E minor"
+      ],
+      "sort_order": 20
+    },
+    {
+      "value": "F_MINOR",
+      "label": "F Minor",
+      "aliases": [
+        "Fm",
+        "F minor"
+      ],
+      "sort_order": 21
+    },
+    {
+      "value": "F_SHARP_MINOR",
+      "label": "F♯ Minor",
+      "aliases": [
+        "F#m",
+        "Gbm",
+        "F# minor"
+      ],
+      "sort_order": 22
+    },
+    {
+      "value": "G_MINOR",
+      "label": "G Minor",
+      "aliases": [
+        "Gm",
+        "G minor"
+      ],
+      "sort_order": 23
+    },
+    {
+      "value": "G_SHARP_MINOR",
+      "label": "G♯ Minor",
+      "aliases": [
+        "G#m",
+        "Abm",
+        "G# minor"
+      ],
+      "sort_order": 24
+    }
+  ]
+}

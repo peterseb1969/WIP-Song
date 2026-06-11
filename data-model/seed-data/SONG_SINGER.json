@@ -1,0 +1,13 @@
+[
+  {
+    "data": {
+      "subject": "test-oidc-subject-001",
+      "display_name": "Test Singer",
+      "email": "test.singer@example.com",
+      "voice_type": "TENOR",
+      "range_low_midi": 48,
+      "range_high_midi": 72
+    },
+    "created_by": "apikey:legacy"
+  }
+]

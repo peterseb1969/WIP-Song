@@ -1,0 +1,18 @@
+[
+  {
+    "data": {
+      "bootstrap_id": "phase3-test-00000000",
+      "app_version": "0.0.0-test",
+      "commit_sha": "df41477",
+      "bootstrapped_at": "2026-06-11T19:12:00",
+      "templates_created": [
+        "TEST_ONLY_ENTRY"
+      ],
+      "edge_types_created": [],
+      "terminologies_created": [
+        "TEST_ONLY_ENTRY"
+      ]
+    },
+    "created_by": "apikey:legacy"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "data": {
+      "singer_ref": "019eb817-60bf-7ade-84e7-710bfa761c82",
+      "lesson_ref": "019eb818-926f-74dc-a4f1-8005c3fdab21",
+      "status": "COMPLETED",
+      "best_score": 95,
+      "attempts_count": 2,
+      "completed_exercise_codes": [
+        "pitch-match-a4",
+        "gedanken-verse-1"
+      ]
+    },
+    "created_by": "apikey:legacy"
+  }
+]

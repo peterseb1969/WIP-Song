@@ -1,0 +1,59 @@
+{
+  "value": "BOOTSTRAP_RECORD",
+  "label": "Bootstrap Record",
+  "description": "Audit record written once per user-initiated namespace bootstrap (CLAUDE.md bootstrap discipline). Provenance trail for any future agent reading this namespace.",
+  "identity_fields": [
+    "bootstrap_id"
+  ],
+  "fields": [
+    {
+      "name": "bootstrap_id",
+      "label": "Bootstrap ID",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "app_version",
+      "label": "App Version",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "commit_sha",
+      "label": "Commit SHA",
+      "type": "string",
+      "mandatory": true
+    },
+    {
+      "name": "bootstrapped_at",
+      "label": "Bootstrapped At",
+      "type": "datetime",
+      "mandatory": true
+    },
+    {
+      "name": "templates_created",
+      "label": "Templates Created",
+      "type": "array",
+      "mandatory": true,
+      "array_item_type": "string"
+    },
+    {
+      "name": "edge_types_created",
+      "label": "Edge Types Created",
+      "type": "array",
+      "mandatory": true,
+      "array_item_type": "string"
+    },
+    {
+      "name": "terminologies_created",
+      "label": "Terminologies Created",
+      "type": "array",
+      "mandatory": true,
+      "array_item_type": "string"
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "audit"
+  }
+}

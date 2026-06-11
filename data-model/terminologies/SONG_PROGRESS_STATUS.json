@@ -1,0 +1,28 @@
+{
+  "value": "SONG_PROGRESS_STATUS",
+  "label": "Progress Status",
+  "description": "State of a singer's progress on a lesson. Absence of a progress document means not started.",
+  "terms": [
+    {
+      "value": "STARTED",
+      "label": "Started",
+      "aliases": [
+        "in progress"
+      ],
+      "sort_order": 1
+    },
+    {
+      "value": "COMPLETED",
+      "label": "Completed",
+      "aliases": [
+        "done"
+      ],
+      "sort_order": 2
+    },
+    {
+      "value": "MASTERED",
+      "label": "Mastered",
+      "sort_order": 3
+    }
+  ]
+}

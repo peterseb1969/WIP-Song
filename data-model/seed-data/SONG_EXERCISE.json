@@ -1,0 +1,33 @@
+[
+  {
+    "data": {
+      "code": "gedanken-verse-1",
+      "title": "Sing verse 1 of Die Gedanken sind frei",
+      "exercise_type": "SONG_SECTION",
+      "difficulty": "EASY",
+      "song_ref": "019eb818-03db-78b9-a9bd-9b1a0895145d",
+      "section_start_ms": 0,
+      "section_end_ms": 30000
+    },
+    "created_by": "apikey:legacy"
+  },
+  {
+    "data": {
+      "code": "pitch-match-a4",
+      "title": "Match the A above middle C",
+      "exercise_type": "PITCH_MATCH",
+      "description": "Listen to the reference tone (A4) and match it.",
+      "difficulty": "BEGINNER",
+      "target_notes": {
+        "events": [
+          {
+            "midi": 69,
+            "start_ms": 0,
+            "duration_ms": 2000
+          }
+        ]
+      }
+    },
+    "created_by": "apikey:legacy"
+  }
+]
