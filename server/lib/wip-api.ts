@@ -54,9 +54,9 @@ export async function wipPatch(path: string, body: unknown): Promise<unknown> {
 }
 
 /**
- * Upload a binary file. contentType defaults to application/octet-stream
- * because the file store's global MIME allowlist currently rejects audio/*
- * (CASE-448). Switch callers to real audio MIME types once that lands.
+ * Upload a binary file. Pass the real MIME type via opts.contentType —
+ * audio/* is accepted since CASE-448 landed; octet-stream remains the
+ * fallback for genuinely untyped bytes.
  */
 export async function wipUploadFile(
   fileBuffer: Buffer,

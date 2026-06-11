@@ -135,10 +135,9 @@ export default function PracticePage() {
     setSaveError(null)
 
     try {
-      // CASE-448: the file store rejects audio/* MIME types, so the take is
-      // uploaded as octet-stream (SONG_ATTEMPT.recording_file allows it).
+      // Real MIME type (audio/webm from MediaRecorder) — CASE-448 implemented.
       const upload = await wip.files.uploadFile(
-        new Blob([blob], { type: 'application/octet-stream' }),
+        blob,
         `attempt-${Date.now()}.webm`,
         { description: `Practice take — ${exercise?.title ?? 'exercise'}`, tags: ['attempt'] },
       )

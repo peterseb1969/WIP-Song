@@ -49,13 +49,7 @@ WIP_API_KEY=<plaintext_key from response>
 
 Because this key is scoped to a single namespace (`dev-wip-song`), WIP derives the namespace automatically when you omit the `namespace` parameter. This means synonym resolution works without passing `namespace` on every API call.
 
-**Write access needs an explicit grant (CASE-450).** A namespace-scoped key can *read* its namespace but document writes fail with "Requires write access" until a grant exists. Create it with the admin key — and note the subject needs the `apikey:` prefix because cross-service permission checks match on the prefixed form (both spellings are safest until CASE-450 lands):
-```bash
-POST /api/registry/namespaces/dev-wip-song/grants
-[{"subject": "apikey:wip-song-dev", "subject_type": "api_key", "permission": "write"},
- {"subject": "wip-song-dev",        "subject_type": "api_key", "permission": "write"}]
-```
-Grants are not exposed via MCP tools or @wip/client (the gap CASE-450 requests closing).
+**Write access needs an explicit grant (CASE-450 — implemented).** A namespace-scoped key can *read* its namespace but document writes need a write grant. Since CASE-450 landed: pass `grant_permission: "write"` to `create_api_key` at key creation (one call, key fully usable), or manage grants via the MCP tools `list_grants` / `create_grant` / `revoke_grant` or `@wip/client`'s `registry.createGrants`. Grant subjects are canonical bare key names now (the old `apikey:`-prefix path-dependence is fixed; legacy dual-spelled grants keep matching via a compat shim). This app's dev key `wip-song-dev` carries write on `dev-wip-song`.
 
 **Key management:** Runtime keys can be listed, updated, and revoked via the Registry API. See WIP's `docs/api-key-management.md` for details.
 

@@ -13,17 +13,16 @@ SONG_LANGUAGE `019eb813-bccb…`, SONG_PROGRESS_STATUS `019eb813-bce3…` (79 te
 
 Template IDs (all v1 active unless noted): SONG_SINGER `019eb816-0708…`,
 SONG_TRACK `019eb816-072b…`, SONG_EXERCISE `019eb816-35e1…`,
-SONG_LESSON `019eb816-58b6…`, **SONG_ATTEMPT `019eb816-8df8…` — v2 active, v1
-deactivated** (recording_file file_config widened to include
-`application/octet-stream`, see deviation below), SONG_PROGRESS `019eb816-9e89…`,
-BOOTSTRAP_RECORD `019eb816-ac8a…`.
+SONG_LESSON `019eb816-58b6…`, **SONG_ATTEMPT `019eb816-8df8…` — v3 active,
+v1/v2 deactivated** (v2 was the CASE-448 workaround; see deviation below),
+SONG_PROGRESS `019eb816-9e89…`, BOOTSTRAP_RECORD `019eb816-ac8a…`.
 
-**Deviation from design — CASE-448:** the platform file store rejects `audio/*`
-uploads (global MIME allowlist). Recordings are stored as
-`application/octet-stream` until CASE-448 lands; SONG_ATTEMPT.recording_file
-accepts `["audio/*", "video/webm", "application/octet-stream"]` and should be
-tightened back to audio-only afterwards. Related: CASE-449 (MCP upload_file
-multipart bug; use REST for file uploads in MCP-driven sessions).
+**Deviation from design — CASE-448 (RESOLVED same day):** the file store
+initially rejected `audio/*` uploads, so v2 widened recording_file to accept
+octet-stream. CASE-448 was implemented by BE-YAC within hours; **SONG_ATTEMPT
+is now at v3** with the designed `["audio/*", "video/webm"]` config and the
+app uploads real MIME types. CASE-449 (MCP upload_file multipart) was also
+fixed and verified.
 
 Test data (kept per Peter, created_by `APP-SONG-phase3-test`): singer
 `019eb817-60bf…`, song "Die Gedanken sind frei" `019eb818-03db…` (v2),

@@ -1,6 +1,7 @@
 # Known issues & deliberate deferrals
 
-Status: end of the first build session (2026-06-11).
+Status: end of the first build session (2026-06-11, updated after the
+CASE-448/449/450 fixes landed the same evening).
 
 ## Needs human verification
 
@@ -13,11 +14,16 @@ Status: end of the first build session (2026-06-11).
 - **`wip-deploy install --app-source` acceptance run not yet executed**
   (contract verification step 3). Dockerfiles + manifest are in place.
 
-## Platform-blocked
+## Resolved platform issues (same day)
 
-- Recordings/imports stored as `application/octet-stream`, not their real
-  MIME types (CASE-448). Browser playback works (content sniffing), but
-  tighten `SONG_ATTEMPT.recording_file.file_config` after the fix lands.
+- **CASE-448** (audio MIME) — implemented and live; SONG_ATTEMPT is at **v3**
+  with `["audio/*", "video/webm"]`, the app uploads real MIME types
+  (audio/webm recordings, audio/midi imports), octet-stream workaround
+  retired. Files uploaded during the workaround window remain typed
+  octet-stream (playable; re-upload only if hygiene matters).
+- **CASE-449** (MCP upload_file) — fixed; verified from this app's session.
+- **CASE-450** (grants) — implemented; `create_api_key` takes
+  `grant_permission`, grant subjects are canonical, MCP grant tools exist.
 
 ## Deferred by design (v1 scope cuts — DESIGN.md)
 

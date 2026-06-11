@@ -57,14 +57,13 @@
       "file_config": {
         "allowed_types": [
           "audio/*",
-          "video/webm",
-          "application/octet-stream"
+          "video/webm"
         ],
         "max_size_mb": 100.0,
         "multiple": false
       },
       "metadata": {
-        "note": "octet-stream allowed as a workaround: the file store's global MIME allowlist currently rejects audio/* uploads. Tighten to audio/* once the platform allowlist includes audio."
+        "note": "Real audio MIME types — CASE-448 implemented (template v3)."
       }
     },
     {

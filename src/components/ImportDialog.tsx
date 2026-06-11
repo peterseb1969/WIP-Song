@@ -75,9 +75,9 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
     setSaving(true)
     setError(null)
     try {
-      // 1. Original import file → WIP file storage (octet-stream, CASE-448).
+      // 1. Original import file → WIP file storage (real MIME — CASE-448 implemented).
       const upload = await wip.files.uploadFile(
-        new Blob([await fileRef.current.arrayBuffer()], { type: 'application/octet-stream' }),
+        new Blob([await fileRef.current.arrayBuffer()], { type: 'audio/midi' }),
         fileRef.current.name,
         { description: `Original import — ${title}`, tags: ['import', result.sourceFormat.toLowerCase()] },
       )

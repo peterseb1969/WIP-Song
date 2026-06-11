@@ -23,30 +23,28 @@ SONG_PROGRESS_STATUS (3).
 | SONG_PROGRESS | `[singer_ref, lesson_ref]` | **progress history over time** |
 | BOOTSTRAP_RECORD | `[bootstrap_id]` | audit, append-style |
 
-SONG_ATTEMPT is at **v2** (v1 deactivated): `recording_file.file_config`
-includes `application/octet-stream` as the CASE-448 workaround. Tighten to
-`audio/*` + `video/webm` when the platform accepts audio uploads.
+SONG_ATTEMPT is at **v3** (v1/v2 deactivated): `recording_file.file_config`
+is back to `["audio/*", "video/webm"]` — the CASE-448 octet-stream
+workaround (v2) was retired the same day the platform fix landed.
 
 ## Files
 
-WIP file storage holds: original import files, song audio (full/backing),
-one recording per attempt — all uploaded as `application/octet-stream`
-(CASE-448).
+WIP file storage holds: original import files (audio/midi), song audio
+(full/backing), one recording per attempt (audio/webm). Files from the
+CASE-448 workaround window remain typed application/octet-stream.
 
 ## Runtime access
 
 Single-namespace runtime key (`wip-song-dev`) via `@wip/proxy`; namespace
-auto-derives on reads. Writes require Registry grants on the namespace —
-**both** `wip-song-dev` and `apikey:wip-song-dev` subjects (CASE-450,
-subject format is path-dependent).
+auto-derives on reads. Writes require a Registry write grant on the namespace (in place for
+`wip-song-dev`; subjects are canonical bare key names since CASE-450).
 
-## Open platform cases this app tracks
+## Platform cases this app filed (all implemented 2026-06-11)
 
-- **CASE-448** — file store rejects `audio/*` MIME (workaround threaded
-  through template v2 + all uploads).
-- **CASE-449** — MCP `upload_file` broken multipart (dev-time only).
-- **CASE-450** — grants not exposed via client/MCP; subject-format
-  inconsistency.
+- **CASE-448** — audio MIME allowlist (fixed; app re-tightened to real types).
+- **CASE-449** — MCP `upload_file` multipart (fixed; verified from this app).
+- **CASE-450** — grants exposure + subject canonicalization (fixed;
+  `create_api_key grant_permission` is the provisioning path now).
 
 ## Seed / reproduction
 

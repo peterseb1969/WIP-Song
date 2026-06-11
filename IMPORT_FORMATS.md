@@ -20,7 +20,7 @@ Endpoint: `POST /server-api/import/parse?filename=…` with raw bytes as
 | Lyric meta (0x05) | Syllables, attached to the note starting within ±¼ quarter-note. Joined (with `/` and `\` as line breaks) into `lyrics_text`. |
 | Time division | Ticks/quarter only. SMPTE division is rejected with a clear error. |
 | Filename `Artist - Title.mid` | Prefills `artist` / `title` (identity fields — re-importing the same song updates it, PoNIF #3). |
-| Original file | Stored via WIP file storage as `application/octet-stream` (CASE-448: the file store rejects audio/* and there's no `audio/midi` either) and linked in `original_file`. |
+| Original file | Stored via WIP file storage as `audio/midi` (CASE-448 implemented) and linked in `original_file`. |
 
 Quirks observed in the first sample (`Queen - Bohemian Rhapsody.mid`,
 format 1, 14 tracks, 192 tpqn): no lyrics at all; two vocal candidates
