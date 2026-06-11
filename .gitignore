@@ -1,6 +1,12 @@
 node_modules/
 dist/
 .env
+# npm pack artifacts. Exception (force-added with `git add -f`): the CURRENT
+# versioned @wip/* tarballs in libs/ that package.json pins — they must be
+# in-repo so a CI runner can `npm ci` + build images from git content alone
+# (CASE-442: versioned filenames are immutable, so lockfile integrity hashes
+# can never silently mismatch). On a lib refresh: git rm the old .tgz,
+# git add -f the new ones.
 *.tgz
 .claude/.session-id
 .claude/.session-role
