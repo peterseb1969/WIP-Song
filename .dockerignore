@@ -15,3 +15,13 @@ coverage
 # Do NOT add a broad `*.md` exclude here. Server code may read Markdown files
 # at runtime (e.g. prompt templates under server/), and a blanket *.md exclude
 # silently drops them from the image. Exclude specific docs if needed, by name.
+
+# WIP-Song additions: dev-time artifacts that don't belong in the image.
+.claude
+.claude-context-pct
+yac-discussions
+data-model
+test-data
+docs
+papers
+DESIGN.md

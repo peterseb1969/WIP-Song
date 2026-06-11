@@ -1,0 +1,41 @@
+# Known issues & deliberate deferrals
+
+Status: end of the first build session (2026-06-11).
+
+## Needs human verification
+
+- **Practice-player audio is untested with a real microphone.** The pipeline
+  (capture → pitch detection → scoring → save) is unit-tested and the save
+  path verified over the wire, but no human has sung into it yet — Peter's
+  machine had no mic connected at test time.
+- **.kar syllable alignment is heuristic-only** — no .kar sample file has
+  been parsed yet (IMPORT_FORMATS.md).
+- **`wip-deploy install --app-source` acceptance run not yet executed**
+  (contract verification step 3). Dockerfiles + manifest are in place.
+
+## Platform-blocked
+
+- Recordings/imports stored as `application/octet-stream`, not their real
+  MIME types (CASE-448). Browser playback works (content sniffing), but
+  tighten `SONG_ATTEMPT.recording_file.file_config` after the fix lands.
+
+## Deferred by design (v1 scope cuts — DESIGN.md)
+
+- Lesson/exercise **authoring UI** (curriculum is seed-data only).
+- UltraStar / LRC / CDG / MusicXML import; audio-only import.
+- Free practice on a whole song from Song detail (button present, disabled —
+  needs either ad-hoc exercises or a song_ref-only practice mode; the
+  SONG_ATTEMPT template already supports it).
+- Alternate guitar tunings, capo, chord shapes, tab-timeline view, sheet-music
+  notation (notation = future cased dependency).
+- Per-skill scoring vocabulary; transposition suggestions from vocal range.
+- Component-level UI tests and a Playwright E2E flow (Guide 7 calls for
+  them; unit + live data-layer tests exist — see `tests/`). Add before
+  calling the definition of done fully met.
+
+## Quirks to remember
+
+- `useDocuments`/GET `/documents` returns one row per document **version** —
+  always use `useQueryDocuments` for lists (ARCHITECTURE.md).
+- The WIP compose stack restarted itself once during development (~22:06,
+  2026-06-11); transient 502s, recovered alone. Watch for recurrence.
