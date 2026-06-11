@@ -76,10 +76,12 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
     setError(null)
     try {
       // 1. Original import file → WIP file storage (real MIME — CASE-448 implemented).
+      // 4th arg: the file endpoint requires namespace as a form field.
       const upload = await wip.files.uploadFile(
         new Blob([await fileRef.current.arrayBuffer()], { type: 'audio/midi' }),
         fileRef.current.name,
         { description: `Original import — ${title}`, tags: ['import', result.sourceFormat.toLowerCase()] },
+        WIP_NAMESPACE,
       )
       // 2. SONG_TRACK upsert (identity title+artist — re-import updates).
       const created = await wip.documents.createDocument({

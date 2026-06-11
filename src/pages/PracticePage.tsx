@@ -136,10 +136,13 @@ export default function PracticePage() {
 
     try {
       // Real MIME type (audio/webm from MediaRecorder) — CASE-448 implemented.
+      // 4th arg: the file endpoint requires namespace as a form field
+      // (README omits the param; it's in the client source).
       const upload = await wip.files.uploadFile(
         blob,
         `attempt-${Date.now()}.webm`,
         { description: `Practice take — ${exercise?.title ?? 'exercise'}`, tags: ['attempt'] },
+        WIP_NAMESPACE,
       )
       await createAttempt.mutateAsync({
         template_id: 'SONG_ATTEMPT',
