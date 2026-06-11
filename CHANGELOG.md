@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Song detail: ▶ Play melody — synthesizes imported note data (MIDI carries
+  no audio) with a moving playhead; skips leading silence.
+- Practice: live tuner readout while recording (note name, cents, Hz).
+- Fix: browser file uploads now pass the required namespace form field.
+
 ## 0.1.0 — 2026-06-11
 
 First build session (Phases 1–4 in one day):

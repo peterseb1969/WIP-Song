@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useDocument } from '@wip/react'
-import { Loader2, ArrowLeft, AlertTriangle, Mic } from 'lucide-react'
+import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import { BASE } from '../lib/config'
+import { playNotes } from '../lib/audio'
 import type { SongData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
@@ -24,6 +26,36 @@ export default function SongDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: doc, isLoading, error } = useDocument(id ?? '')
   const song = doc?.data as SongData | undefined
+
+  // Melody synth playback (MIDI imports carry notes, not audio) with playhead.
+  const [playheadMs, setPlayheadMs] = useState<number | null>(null)
+  const stopSynthRef = useRef<(() => void) | null>(null)
+  const rafRef = useRef<number | null>(null)
+
+  const stopMelody = () => {
+    stopSynthRef.current?.()
+    stopSynthRef.current = null
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    setPlayheadMs(null)
+  }
+  const playMelody = () => {
+    const events = song?.melody?.events
+    if (!events?.length) return
+    stopMelody()
+    // Skip leading silence (real imports: Bohemian Rhapsody's vocals enter at ~52s).
+    const firstStart = Math.min(...events.map((e) => e.start_ms))
+    stopSynthRef.current = playNotes(
+      events.map((e) => ({ ...e, start_ms: e.start_ms - firstStart })),
+      stopMelody,
+    )
+    const startedAt = performance.now()
+    const tick = () => {
+      setPlayheadMs(firstStart + (performance.now() - startedAt))
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+  useEffect(() => stopMelody, []) // stop on unmount
 
   if (isLoading) {
     return (
@@ -100,8 +132,27 @@ export default function SongDetailPage() {
 
       {song.melody?.events.length ? (
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-text">Melody</h2>
-          <NoteViews events={song.melody.events} stepping />
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-text">Melody</h2>
+            {playheadMs == null ? (
+              <button
+                type="button"
+                onClick={playMelody}
+                className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <Play className="h-4 w-4" /> Play melody
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={stopMelody}
+                className="flex items-center gap-2 rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
+              >
+                <Square className="h-4 w-4" /> Stop
+              </button>
+            )}
+          </div>
+          <NoteViews events={song.melody.events} stepping currentMs={playheadMs} />
         </section>
       ) : (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
