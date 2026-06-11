@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage'
 import ProfilePage from './pages/ProfilePage'
 import SongsPage from './pages/SongsPage'
 import SongDetailPage from './pages/SongDetailPage'
+import PracticeIndexPage from './pages/PracticeIndexPage'
+import PracticePage from './pages/PracticePage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
@@ -23,6 +25,8 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/songs" element={<SongsPage />} />
             <Route path="/songs/:id" element={<SongDetailPage />} />
+            <Route path="/practice" element={<PracticeIndexPage />} />
+            <Route path="/practice/:id" element={<PracticePage />} />
             <Route
               path="/lessons"
               element={<PlaceholderPage title="Lessons" comingIn="Lessons arrive in build phase 7." />}

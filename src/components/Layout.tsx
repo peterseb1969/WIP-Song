@@ -6,6 +6,7 @@ import AskBar from './AskBar'
 const NAV_ITEMS = [
   { to: '/songs', label: 'Songs' },
   { to: '/lessons', label: 'Lessons' },
+  { to: '/practice', label: 'Practice' },
   { to: '/progress', label: 'Progress' },
 ]
 
