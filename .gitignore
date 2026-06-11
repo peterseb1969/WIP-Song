@@ -4,3 +4,4 @@ dist/
 *.tgz
 .claude/.session-id
 .claude/.session-role
+.claude-context-pct
