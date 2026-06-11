@@ -10,7 +10,7 @@ import PracticeIndexPage from './pages/PracticeIndexPage'
 import PracticePage from './pages/PracticePage'
 import LessonsPage from './pages/LessonsPage'
 import LessonDetailPage from './pages/LessonDetailPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import ProgressPage from './pages/ProgressPage'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
 // Router's <Link>/navigate() drop the deploy prefix and reloads 404 at the
@@ -31,10 +31,7 @@ export default function App() {
             <Route path="/practice/:id" element={<PracticePage />} />
             <Route path="/lessons" element={<LessonsPage />} />
             <Route path="/lessons/:id" element={<LessonDetailPage />} />
-            <Route
-              path="/progress"
-              element={<PlaceholderPage title="Progress" comingIn="Progress history arrives in build phase 8." />}
-            />
+            <Route path="/progress" element={<ProgressPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Routes>
