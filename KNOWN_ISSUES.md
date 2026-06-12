@@ -65,7 +65,10 @@ added 2026-06-12).
   saved attempt does not record the speed it was sung at — SONG_ATTEMPT has
   no such field (adding one = data-model change, Rule 6); a 0.5× attempt
   scores like any other.
-- **Loops** — repeat a selected section (notes or time range) until nailed.
+- ~~Loops~~ **DONE 2026-06-12**: note-range loop on the practice page —
+  repeated listen (synth + backing slice), range-scoped scoring, lesson
+  progress deliberately not counted on loop takes. Time-range/marker-anchored
+  loops arrive with markers.
 - **Markers** — named positions in a song (verse, chorus, "the hard bit") to
   jump to and to anchor loops/exercises. Likely a data-model addition
   (markers on SONG_TRACK) → Rule 6: through Phase 2/3 first.

@@ -50,7 +50,9 @@ path-prefix contract; every client URL derives from `import.meta.env.BASE_URL`).
   trace→canonical-event condenser; `lib/progress.ts` — singer×lesson upsert.
 - `pages/PracticePage.tsx` — the state machine (idle → listening → recording →
   saving → done). Song-section exercises slice the song melody; backing track
-  plays under the recording when present.
+  plays under the recording when present. Loop mode practices a note
+  sub-range: active targets derive from the loop slice, listen repeats until
+  stopped, lesson progress is skipped on loop takes.
 
 ## Canonical note events
 

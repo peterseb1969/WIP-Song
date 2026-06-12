@@ -6,6 +6,11 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Loops: practice a note range on repeat. Toggle Loop on the practice page,
+  pick the range (notes m–n); Listen repeats it (synth or backing-track
+  slice, at any speed) until stopped, and a sung take is scored against the
+  range only. Loop takes save as attempts but never count toward lesson
+  progress — completing an exercise still requires the whole thing.
 - Background-track upload: the song page's backing-track and full-mix
   sections now upload/replace audio (MP3/WAV/OGG…) — file goes to WIP
   storage with its real MIME, then a PATCH sets just that field (new

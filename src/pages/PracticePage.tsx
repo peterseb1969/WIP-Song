@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useDocument, useQueryDocuments, useCreateDocument, useWipClient } from '@wip/react'
-import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check, ChevronRight } from 'lucide-react'
+import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check, ChevronRight, Repeat } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import { useSinger } from '../contexts/SingerContext'
@@ -95,6 +95,11 @@ export default function PracticePage() {
   // Speed the current/last take was sung at — keeps the trace overlay and
   // scoring consistent even if the picker changes after recording.
   const takeSpeedRef = useRef(1)
+  // Loop: practice a sub-range of the targets (0-based inclusive note
+  // indices). Listen repeats it until stopped; a sung take scores against
+  // the range only and does NOT count toward lesson progress.
+  const [loop, setLoop] = useState<{ from: number; to: number } | null>(null)
+  const loopingRef = useRef(false)
 
   const traceRef = useRef<PitchSample[]>([])
   const [traceTick, setTraceTick] = useState(0)
@@ -105,7 +110,22 @@ export default function PracticePage() {
   const stoppingRef = useRef(false)
   const backingRef = useRef<HTMLAudioElement | null>(null)
 
-  const totalMs = targets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
+  // Loop range clamped to the current targets; the active targets are the
+  // looped slice re-based to t=0 (the whole exercise when no loop is set).
+  const loopFrom = loop ? Math.min(Math.max(0, loop.from), targets.length - 1) : 0
+  const loopTo = loop ? Math.min(Math.max(loopFrom, loop.to), targets.length - 1) : targets.length - 1
+  const loopActive = loop != null && targets.length > 0
+  const activeTargets: NoteEvent[] = useMemo(() => {
+    if (!loopActive) return targets
+    const slice = targets.slice(loopFrom, loopTo + 1)
+    const base = slice.length ? slice[0]!.start_ms : 0
+    return slice.map((e) => ({ ...e, start_ms: e.start_ms - base }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- targets is rebuilt per render; its content is keyed by doc + loop bounds
+  }, [doc, songDoc, loopActive, loopFrom, loopTo])
+  /** Offset of the active range within the exercise timeline (for backing audio). */
+  const activeOffsetMs = loopActive && targets[loopFrom] ? targets[loopFrom]!.start_ms : 0
+
+  const totalMs = activeTargets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
 
   // Backing-track slice playback for song sections with audio.
   const hasBacking = !!song?.audio_backing
@@ -113,17 +133,22 @@ export default function PracticePage() {
     backingRef.current?.pause()
     backingRef.current = null
   }
-  const playBackingSlice = (onEnd?: () => void) => {
+  const playBackingSlice = (onEnd?: () => void, repeat = false) => {
     if (!song?.audio_backing) return
     const audio = new Audio(`${BASE}wip/files/${song.audio_backing}/content`)
-    audio.currentTime = sectionStart / 1000
+    const startAt = (sectionStart + activeOffsetMs) / 1000
+    audio.currentTime = startAt
     audio.playbackRate = speed // pitch-preserving (preservesPitch defaults true)
     backingRef.current = audio
-    const stopAt = Math.min(sectionEnd, sectionStart + totalMs + 1500) / 1000
+    const stopAt = Math.min(sectionEnd, sectionStart + activeOffsetMs + totalMs + 1500) / 1000
     audio.ontimeupdate = () => {
       if (audio.currentTime >= stopAt) {
-        stopBacking()
-        onEnd?.()
+        if (repeat && loopingRef.current) {
+          audio.currentTime = startAt // loop the range
+        } else {
+          stopBacking()
+          onEnd?.()
+        }
       }
     }
     audio.onended = () => onEnd?.()
@@ -142,14 +167,35 @@ export default function PracticePage() {
   )
 
   const handleListen = () => {
-    if (phase === 'listening') return
+    if (phase === 'listening') {
+      // Second click stops — essential for looped listening, harmless otherwise.
+      loopingRef.current = false
+      stopListenRef.current?.()
+      setPhase('idle')
+      return
+    }
     setPhase('listening')
-    const done = () => setPhase((p) => (p === 'listening' ? 'idle' : p))
+    const done = () => {
+      loopingRef.current = false
+      setPhase((p) => (p === 'listening' ? 'idle' : p))
+    }
+    loopingRef.current = loopActive
     if (hasBacking) {
-      playBackingSlice(done)
+      playBackingSlice(done, loopActive)
       stopListenRef.current = () => stopBacking()
+    } else if (loopActive) {
+      // Synth loop: replay the range until the user stops.
+      let cancel: (() => void) | null = null
+      const playOnce = () => {
+        cancel = playNotes(activeTargets, () => (loopingRef.current ? playOnce() : done()), speed)
+      }
+      playOnce()
+      stopListenRef.current = () => {
+        loopingRef.current = false
+        cancel?.()
+      }
     } else {
-      stopListenRef.current = playNotes(targets, done, speed)
+      stopListenRef.current = playNotes(activeTargets, done, speed)
     }
   }
 
@@ -168,7 +214,7 @@ export default function PracticePage() {
     const takeSpeed = takeSpeedRef.current
     const scoringSamples =
       takeSpeed === 1 ? samples : samples.map((s) => ({ ...s, t_ms: Math.round(s.t_ms * takeSpeed) }))
-    const result = scoreAttempt(targets, scoringSamples)
+    const result = scoreAttempt(activeTargets, scoringSamples)
     setScores(result)
     setPhase('saving')
     setSaveError(null)
@@ -201,7 +247,8 @@ export default function PracticePage() {
         created_by: 'wip-song-app',
       })
       // Lesson context: upsert the singer×lesson progress doc (new version).
-      if (lessonId && lesson && singerId && exercise) {
+      // Loop takes never count — completing an exercise requires the whole thing.
+      if (lessonId && lesson && singerId && exercise && !loopActive) {
         const lessonExerciseCodes = lesson.exercise_refs
           .map((ref) => codeOfRef.get(ref))
           .filter((c): c is string => !!c)
@@ -221,7 +268,7 @@ export default function PracticePage() {
       stoppingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- codeOfRef is rebuilt per render from the catalog query
-  }, [targets, wip, createAttempt, singerId, id, exercise, lessonId, lesson])
+  }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson])
 
   const handleRecord = async () => {
     stopListenRef.current?.()
@@ -261,6 +308,8 @@ export default function PracticePage() {
     setScores(null)
     setSaveError(null)
     setRecordMs(null)
+    setLoop(null)
+    loopingRef.current = false
     traceRef.current = []
     setTraceTick((t) => t + 1)
   }, [])
@@ -321,7 +370,7 @@ export default function PracticePage() {
       </div>
 
       <NoteViews
-        events={targets}
+        events={activeTargets}
         tuning={exercise?.target_notes ? undefined : song?.melody?.tuning}
         currentMs={phase === 'recording' && recordMs != null ? recordMs * takeSpeedRef.current : null}
         renderOverlay={({ xOfMs, yOfMidi, rowHeight }) => {
@@ -342,13 +391,56 @@ export default function PracticePage() {
           onChange={setSpeed}
           disabled={phase === 'listening' || phase === 'recording' || phase === 'saving'}
         />
+
+        <div className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-surface p-0.5">
+          <button
+            type="button"
+            onClick={() => setLoop(loop ? null : { from: 0, to: targets.length - 1 })}
+            disabled={phase !== 'idle' && phase !== 'done'}
+            aria-pressed={loopActive}
+            title="Loop a section: listen repeats it, singing scores it (lesson progress not counted)"
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${
+              loopActive ? 'bg-primary text-white' : 'text-text-muted hover:bg-primary/5'
+            }`}
+          >
+            <Repeat className="h-3.5 w-3.5" /> Loop
+          </button>
+          {loopActive && (
+            <span className="flex items-center gap-1 pr-1 text-xs text-text-muted">
+              notes
+              <input
+                type="number"
+                min={1}
+                max={loopTo + 1}
+                value={loopFrom + 1}
+                disabled={phase !== 'idle' && phase !== 'done'}
+                onChange={(e) => setLoop({ from: Number(e.target.value) - 1, to: loopTo })}
+                className="w-14 rounded border border-gray-200 px-1 py-0.5 text-center text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="Loop from note"
+              />
+              –
+              <input
+                type="number"
+                min={loopFrom + 1}
+                max={targets.length}
+                value={loopTo + 1}
+                disabled={phase !== 'idle' && phase !== 'done'}
+                onChange={(e) => setLoop({ from: loopFrom, to: Number(e.target.value) - 1 })}
+                className="w-14 rounded border border-gray-200 px-1 py-0.5 text-center text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="Loop to note"
+              />
+              / {targets.length}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleListen}
           disabled={phase === 'recording' || phase === 'saving'}
           className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Play className="h-4 w-4" /> {phase === 'listening' ? 'Playing…' : 'Listen'}
+          {phase === 'listening' ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {phase === 'listening' ? (loopActive ? 'Stop loop' : 'Stop') : loopActive ? 'Listen (loop)' : 'Listen'}
         </button>
 
         {phase !== 'recording' ? (
@@ -434,8 +526,9 @@ export default function PracticePage() {
             <div className="flex items-center justify-between gap-2 rounded-lg border border-success/20 bg-success/5 p-3 text-sm text-success">
               <span className="flex items-center gap-2">
                 <Check className="h-4 w-4" /> Attempt saved
-                {lessonId && scores.overall_score >= COMPLETION_SCORE && ' — exercise completed!'}
-                {lessonId && scores.overall_score < COMPLETION_SCORE && ` — reach ${COMPLETION_SCORE} to complete this exercise.`}
+                {lessonId && loopActive && ' — loop practice (progress not counted)'}
+                {lessonId && !loopActive && scores.overall_score >= COMPLETION_SCORE && ' — exercise completed!'}
+                {lessonId && !loopActive && scores.overall_score < COMPLETION_SCORE && ` — reach ${COMPLETION_SCORE} to complete this exercise.`}
               </span>
               {lessonId && nextExerciseRef && (
                 <Link
