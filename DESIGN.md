@@ -55,7 +55,12 @@ and `_TIME_UNITS`. `COUNTRY` exists only in `clintrial` (not needed).
 ## Canonical note representation (app-level convention, not a template)
 
 A note event: `{ midi: int (0-127), start_ms: int, duration_ms: int,
-syllable?: string }`. A melody: `{ tempo_bpm?: number, events: NoteEvent[] }`.
+syllable?: string, string?: int, fret?: int }` — `string`/`fret` are the
+exact fretboard position (0 = lowest string), present on Guitar Pro imports
+(added 2026-06-12). A melody: `{ tempo_bpm?: number, events: NoteEvent[],
+tuning?: number[] }` — `tuning` is open-string MIDI low → high, also from
+Guitar Pro imports. Object fields are schema-free inside, so these optional
+additions are non-breaking (no template version bump).
 Stored in `object` fields (`SONG_TRACK.melody`, `SONG_EXERCISE.target_notes`,
 `SONG_ATTEMPT.transcription`). All import parsers normalize to this; the
 scorer compares transcription events to target events. MIDI numbers, not note
@@ -68,7 +73,7 @@ names, are canonical (names are presentation).
 | SONG_VOICE_TYPE | Voice Type | SOPRANO, MEZZO_SOPRANO, ALTO, COUNTERTENOR, TENOR, BARITONE, BASS, CHILD | |
 | SONG_DIFFICULTY | Difficulty | BEGINNER, EASY, INTERMEDIATE, ADVANCED, EXPERT | |
 | SONG_EXERCISE_TYPE | Exercise Type | PITCH_MATCH, INTERVAL, SCALE, RHYTHM, SONG_SECTION, BREATHING, FREE_PRACTICE | |
-| SONG_SOURCE_FORMAT | Source Format | MIDI, KAR, ULTRASTAR_TXT, LRC, CDG, MUSICXML, MP3, WAV, OGG | import format of the original file |
+| SONG_SOURCE_FORMAT | Source Format | MIDI, KAR, ULTRASTAR_TXT, LRC, CDG, MUSICXML, MP3, WAV, OGG, GUITAR_PRO | import format of the original file (GUITAR_PRO added 2026-06-12, term `019ebadc-ef15…`) |
 | SONG_MUSICAL_KEY | Musical Key | 24 terms: C_MAJOR … B_MINOR | aliases like "C", "Am", "F#m" |
 | SONG_GENRE | Genre | POP, ROCK, FOLK, CLASSICAL, JAZZ, MUSICAL, CHILDREN, HYMN, COUNTRY, BLUES, SCHLAGER, OTHER | `mutable: true`, extensible — users add genres |
 | SONG_LANGUAGE | Lyrics Language | EN, DE, FR, ES, IT, SV, NL, PT, JA, KO, OTHER | extensible; values are ISO 639-1 where possible |

@@ -15,6 +15,8 @@ interface Candidate {
   minMidi: number
   maxMidi: number
   suggested: boolean
+  /** Open-string MIDI values low → high (Guitar Pro imports). */
+  tuning?: number[]
   events: NoteEvent[]
 }
 
@@ -110,7 +112,11 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
       // (real MIME — CASE-448 implemented; 4th arg: the file endpoint
       // requires namespace as a form field).
       const upload = await wip.files.uploadFile(
-        new Blob([await fileRef.current.arrayBuffer()], { type: 'audio/midi' }),
+        // original_file accepts */*; MIDI gets its real type, Guitar Pro has
+        // no registered MIME — octet-stream is the honest label there.
+        new Blob([await fileRef.current.arrayBuffer()], {
+          type: result.sourceFormat === 'GUITAR_PRO' ? 'application/octet-stream' : 'audio/midi',
+        }),
         fileRef.current.name,
         { description: `Original import — ${title}`, tags: ['import', result.sourceFormat.toLowerCase()] },
         WIP_NAMESPACE,
@@ -133,7 +139,11 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
             source_format: result.sourceFormat,
             original_file: upload.file_id,
             ...(result.lyricsText ? { lyrics_text: result.lyricsText } : {}),
-            melody: { tempo_bpm: result.tempoBpm, events: track.events },
+            melody: {
+              tempo_bpm: result.tempoBpm,
+              events: track.events,
+              ...(track.tuning ? { tuning: track.tuning } : {}),
+            },
           },
           created_by: 'wip-song-app',
         })
@@ -167,11 +177,11 @@ export default function ImportDialog({ onClose }: { onClose: () => void }) {
           {!result && (
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-10 text-center hover:border-primary/40">
               <Upload className="h-8 w-8 text-text-muted" />
-              <span className="text-sm font-medium text-text">Choose a .mid or .kar file</span>
-              <span className="text-xs text-text-muted">Guitar Pro / UltraStar / LRC / CDG support comes later</span>
+              <span className="text-sm font-medium text-text">Choose a .mid, .kar, or Guitar Pro (.gp3/.gp4/.gp5) file</span>
+              <span className="text-xs text-text-muted">GP6/GP7 (.gpx/.gp), UltraStar, LRC, CDG support comes later</span>
               <input
                 type="file"
-                accept=".mid,.midi,.kar"
+                accept=".mid,.midi,.kar,.gp3,.gp4,.gp5"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0]

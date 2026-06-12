@@ -43,22 +43,40 @@ melody track), marker stripping, directive exclusion, the >20-event gate
 precedence. A real-world .kar exercise is still welcome — wild files carry
 encoding quirks no synthetic covers.
 
+## Guitar Pro 3/4/5 (.gp3/.gp4/.gp5) — implemented 2026-06-12
+
+Parser: `server/lib/gp.ts` (no dependencies; byte layout transcribed from
+TuxGuitar's GP3/4/5 input streams — the de-facto reference for these
+reverse-engineered formats). Same endpoint and result shape as MIDI;
+`source_format: GUITAR_PRO`.
+
+| Source | Mapping |
+|---|---|
+| Track | One melody **candidate** per track (GP tracks are single instruments — no per-channel split). Percussion tracks (GM channel 10) excluded. |
+| Notes (string + fret) | Events carry exact `{string, fret}` (0 = lowest string) plus `midi = open-string + fret + capo`. The candidate carries `tuning` (open-string MIDI low → high) — bass 4-string and alternate tunings come through correctly. |
+| Beats within measures | Beat duration from note value (2^-d quarters) × dot × tuplet; positions accumulated per measure; measure starts from the time-signature progression. |
+| Chords | Collapsed to the **highest** sounding note (melody on top). |
+| Tied notes | Sustain the previous event (no new note). Dead notes (x) skipped. |
+| Tempo | Header tempo + mix-table changes; a mid-measure change applies from its measure's start (TuxGuitar's measure-granularity model). |
+| Title/artist | Read from the file header; beats the filename heuristic. |
+| GP4/GP5 lyrics | First lyric line lands in `lyrics_text`; per-note syllable alignment NOT implemented (GP aligns syllables to beats of the lyric track — future work). |
+| Repeats / alternate endings | **Not expanded** — the melody is the chart as written, one pass. |
+| Sub-versions | GP3 v3.00, GP4 v4.00/v4.06/L4.06, GP5 v5.00 + v5.10 (layout deltas handled). Files end exactly on the last beat; trailing pad skips are EOF-tolerant. |
+
+Verified against the four-sample corpus (`tests/unit/gp.test.ts`): GP3
+Pushed Again (Voice track starred, bass tuning [28,33,38,43]), GP4 Ballroom
+Blitz, GP5 v5.00 Liebeslied (duration matches measures × tempo exactly),
+GP5 v5.10 Nena. Invariant checked on every event: `midi = tuning[string] +
+fret`, no overlaps, frets 0–30.
+
 ## Planned, not implemented
 
-- **Guitar Pro (.gp3/.gp4/.gp5/.gpx/.gp)** — requested by Peter 2026-06-12
-  (he's a guitarist). Two format families: the classic binary formats
-  (.gp3–.gp5, reverse-engineered and well documented) and the modern
-  container formats (.gpx is a proprietary "BCFZ" archive; .gp since GP7 is
-  a zip holding `Content/score.gpif` XML). Notes carry string+fret — exact
-  fretboard positions for the fretboard view, no position inference needed —
-  plus rhythm, tempo map, and per-track tuning. Likely first cut: the
-  classic binary family and/or GP7 zip+XML (both dependency-free); .gpx
-  (BCFZ) last. Multi-track import (2026-06-12) already gives each track a
-  home. **Samples on hand** (`test-data/`, verified magic bytes): GP3 v3.00
-  (Pushed Again), GP4 v4.0 (sweet-ballroom-blitz), GP5 v5.0 (Liebeslied),
-  GP5 v5.1 (Nena — v5.1 deviates from v5.0, both needed), GPX/BCFZ (EASY
-  RIFFS), GP7+ zip (TheManWhoSoldTheWorld, `Content/score.gpif` is 110 KB
-  of plain XML).
+- **Guitar Pro 6/7+ (.gpx/.gp)** — the modern container generations: .gpx is
+  a proprietary "BCFZ" archive; .gp (GP7+) is a zip holding
+  `Content/score.gpif` XML (sample on hand: TheManWhoSoldTheWorld.gp,
+  110 KB of plain XML — the easier of the two). Workaround until then:
+  export as .gp5 from Guitar Pro. Samples on hand: EASY RIFFS.gpx,
+  TheManWhoSoldTheWorld.gp.
 - **UltraStar (.txt)** — `: start dur pitch syllable` lines; pitches relative
   to a `#GAP`/`#BPM` header. Candidate for the next import iteration.
 - **LRC (.lrc)** — lyrics+timing only (no pitch); would attach syllables to an

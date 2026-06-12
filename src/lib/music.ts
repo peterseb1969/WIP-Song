@@ -29,11 +29,16 @@ export interface NoteEvent {
   start_ms: number
   duration_ms: number
   syllable?: string
+  /** Exact fretboard position (Guitar Pro imports): 0 = lowest string. */
+  string?: number
+  fret?: number
 }
 
 export interface Melody {
   tempo_bpm?: number
   events: NoteEvent[]
+  /** Open-string MIDI values low → high (Guitar Pro imports). */
+  tuning?: number[]
 }
 
 /** Guitar standard tuning, low to high: E2 A2 D3 G3 B3 E4. */

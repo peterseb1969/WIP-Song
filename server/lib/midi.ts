@@ -13,6 +13,9 @@ export interface ParsedNote {
   start_ms: number
   duration_ms: number
   syllable?: string
+  /** Exact fretboard position (Guitar Pro imports): 0 = lowest string. */
+  string?: number
+  fret?: number
 }
 
 export interface CandidateTrack {
@@ -24,6 +27,8 @@ export interface CandidateTrack {
   maxMidi: number
   /** Name matches a vocal/melody heuristic. */
   suggested: boolean
+  /** Open-string MIDI values, low → high (Guitar Pro imports). */
+  tuning?: number[]
   events: ParsedNote[]
 }
 
@@ -37,6 +42,8 @@ export interface ParsedMidi {
   /** Joined lyric text (for SONG_TRACK.lyrics_text), when present. */
   lyricsText?: string
   candidates: CandidateTrack[]
+  /** Title/artist carried inside the file (Guitar Pro); beats the filename heuristic. */
+  prefill?: { title: string; artist: string }
 }
 
 interface RawNote {
@@ -50,7 +57,7 @@ interface LyricEvent {
   text: string
 }
 
-const VOCAL_NAME = /vo[xc]|vocal|melod|lead(?!\s*g)|sing|kara/i
+export const VOCAL_NAME = /vo[xci]|melod|lead(?!\s*g)|sing|kara|gesang|stimme/i
 
 class Reader {
   pos = 0

@@ -77,9 +77,11 @@ added 2026-06-12).
 
 ## Backlog from Peter (2026-06-12)
 
-- **Guitar Pro import (.gp/.gp5/…)** — see IMPORT_FORMATS.md "Planned" for
-  the format-family breakdown; string+fret data would feed the fretboard
-  view exactly.
+- ~~Guitar Pro import~~ **GP3/4/5 DONE 2026-06-12** (`server/lib/gp.ts`,
+  12 tests against the four-sample corpus; exact string+fret+tuning stored
+  on melody events). Still open: **GP6/GP7 (.gpx/.gp)** container formats —
+  workaround: export as .gp5. Also open: per-note GP lyric syllables, repeat
+  expansion (see IMPORT_FORMATS.md).
 - ~~Multi-track MIDI import~~ **DONE 2026-06-12**: the import dialog
   multi-selects tracks; one SONG_TRACK per track, shared original file,
   track names appended to titles to keep identities distinct.

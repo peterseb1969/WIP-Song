@@ -8,8 +8,11 @@
 
 import { Router, raw } from 'express'
 import { parseMidi } from '../lib/midi.js'
+import { parseGp } from '../lib/gp.js'
 
 const router = Router()
+
+const GP_EXTS = ['gp3', 'gp4', 'gp5']
 
 router.post(
   '/import/parse',
@@ -21,21 +24,30 @@ router.post(
       return
     }
     const ext = filename.toLowerCase().split('.').pop() || ''
-    if (!['mid', 'midi', 'kar'].includes(ext)) {
-      res.status(415).json({ error: `Unsupported format .${ext} — MIDI (.mid) and MIDI karaoke (.kar) are supported today` })
+    if (ext === 'gp' || ext === 'gpx') {
+      res.status(415).json({ error: `.${ext} (Guitar Pro 6/7+) is not supported yet — export as .gp5 from Guitar Pro, or wait for the GP7 importer` })
+      return
+    }
+    if (!['mid', 'midi', 'kar', ...GP_EXTS].includes(ext)) {
+      res.status(415).json({ error: `Unsupported format .${ext} — MIDI (.mid/.kar) and Guitar Pro 3/4/5 (.gp3/.gp4/.gp5) are supported today` })
       return
     }
     try {
-      const parsed = parseMidi(req.body)
-      // Prefill from "Artist - Title" filename convention.
+      const isGp = GP_EXTS.includes(ext)
+      const parsed = isGp ? parseGp(req.body) : parseMidi(req.body)
+      // Prefill: file-internal metadata (Guitar Pro) beats the
+      // "Artist - Title" filename convention; fall back per field.
       const base = filename.replace(/\.[^.]+$/, '')
       const dash = base.indexOf(' - ')
-      const artist = dash > 0 ? base.slice(0, dash).trim() : ''
-      const title = dash > 0 ? base.slice(dash + 3).trim() : base.trim()
+      const fnArtist = dash > 0 ? base.slice(0, dash).trim() : ''
+      const fnTitle = dash > 0 ? base.slice(dash + 3).trim() : base.trim()
       res.json({
         ...parsed,
-        sourceFormat: ext === 'kar' ? 'KAR' : 'MIDI',
-        prefill: { title, artist },
+        sourceFormat: isGp ? 'GUITAR_PRO' : ext === 'kar' ? 'KAR' : 'MIDI',
+        prefill: {
+          title: parsed.prefill?.title?.trim() || fnTitle,
+          artist: parsed.prefill?.artist?.trim() || fnArtist,
+        },
       })
     } catch (err) {
       res.status(422).json({ error: `Could not parse ${filename}: ${(err as Error).message}` })

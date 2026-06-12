@@ -7,7 +7,7 @@ namespace held nothing reusable at design time — see DESIGN.md).
 ## Terminologies (8, all owned by this app)
 
 SONG_VOICE_TYPE (8) · SONG_DIFFICULTY (5) · SONG_EXERCISE_TYPE (7) ·
-SONG_SOURCE_FORMAT (9) · SONG_MUSICAL_KEY (24, enharmonic aliases) ·
+SONG_SOURCE_FORMAT (10) · SONG_MUSICAL_KEY (24, enharmonic aliases) ·
 SONG_GENRE (12, **mutable/extensible**) · SONG_LANGUAGE (11, **mutable**) ·
 SONG_PROGRESS_STATUS (3).
 

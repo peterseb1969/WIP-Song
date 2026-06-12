@@ -6,6 +6,11 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Guitar Pro 3/4/5 import (.gp3/.gp4/.gp5): dependency-free parser (byte
+  layout from TuxGuitar's readers), file-internal title/artist prefill,
+  per-track tunings, and exact string+fret positions on every melody event
+  (`melody.tuning`, `events[].string/fret`). Data model: `GUITAR_PRO` term
+  added to SONG_SOURCE_FORMAT (additive). GP6/GP7 containers still planned.
 - Multi-track MIDI import: select several tracks in one go — one song per
   track, shared original file, track names appended to titles (identity is
   title+artist). Guitar Pro import added to the planned-formats list.
