@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Markers by mouse: click empty piano-roll space to drop a marker there
+  (auto-named); each marker now has a fat flag handle at the top of its
+  line — click it to remove. Note clicks still select for the fretboard.
+
 - Song detail: ▶ Play melody — synthesizes imported note data (MIDI carries
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).

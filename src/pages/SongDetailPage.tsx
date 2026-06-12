@@ -5,9 +5,9 @@ import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-rea
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import AudioTrackUpload from '../components/AudioTrackUpload'
-import MarkersEditor from '../components/MarkersEditor'
+import MarkersEditor, { useSaveMarkers } from '../components/MarkersEditor'
 import { playNotes } from '../lib/audio'
-import type { SongData } from '../lib/types'
+import type { Marker, SongData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
 
@@ -25,6 +25,28 @@ export default function SongDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { data: doc, isLoading, error } = useDocument(id ?? '')
   const song = doc?.data as SongData | undefined
+
+  const markerSave = useSaveMarkers({
+    documentId: doc?.document_id ?? '',
+    templateVersion: doc?.template_version ?? 1,
+    song: song ?? ({ title: '', artist: '' } as SongData),
+  })
+  /** Toggle from a piano-roll click: hit an existing marker (±250 ms) →
+   *  remove it; empty space → add an auto-named point marker there. */
+  const toggleMarkerAt = (ms: number) => {
+    if (!doc || !song || markerSave.busy) return
+    const markers = song.markers ?? []
+    const hit = markers.findIndex((m) => Math.abs(m.start_ms - ms) <= 250)
+    if (hit >= 0) {
+      void markerSave.save(markers.filter((_, i) => i !== hit))
+      return
+    }
+    let n = 1
+    while (markers.some((m) => m.label === `Marker ${n}`)) n++
+    void markerSave.save(
+      [...markers, { label: `Marker ${n}`, start_ms: Math.round(ms) } as Marker].sort((a, b) => a.start_ms - b.start_ms),
+    )
+  }
 
   // Melody synth playback (MIDI imports carry notes, not audio) with playhead.
   const [playheadMs, setPlayheadMs] = useState<number | null>(null)
@@ -174,21 +196,37 @@ export default function SongDetailPage() {
             stepping
             currentMs={playheadMs}
             tuning={song.melody.tuning}
+            onTimelineClick={toggleMarkerAt}
             renderOverlay={({ xOfMs, height }) =>
-              (song.markers ?? []).map((m) => {
+              (song.markers ?? []).map((m, idx) => {
                 const x = xOfMs(m.start_ms)
+                const flagW = Math.max(22, m.label.length * 5.5 + 12)
                 return (
                   <g key={`${m.label}-${m.start_ms}`}>
                     {m.end_ms != null && (
                       <rect x={x} y={0} width={xOfMs(m.end_ms) - x} height={height} fill="#2B579A" opacity={0.06} />
                     )}
                     <line x1={x} y1={0} x2={x} y2={height} stroke="#2B579A" strokeDasharray="3 3" opacity={0.6} />
-                    <text x={x + 3} y={10} fontSize={9} fill="#2B579A" opacity={0.9}>{m.label}</text>
+                    {/* Flag handle: fat click target at the top — click removes the marker. */}
+                    <g
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!markerSave.busy) void markerSave.save((song.markers ?? []).filter((_, i) => i !== idx))
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <title>{`Remove marker "${m.label}"`}</title>
+                      <rect x={x} y={0} width={flagW} height={14} rx={3} fill="#2B579A" opacity={0.92} />
+                      <text x={x + 5} y={10.5} fontSize={9} fontWeight={600} fill="#FFFFFF">{m.label}</text>
+                    </g>
                   </g>
                 )
               })
             }
           />
+          {markerSave.error && (
+            <p className="mt-2 text-sm text-danger">Marker change failed: {markerSave.error}</p>
+          )}
         </section>
       ) : (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

@@ -21,6 +21,8 @@ interface PianoRollProps {
   renderOverlay?: (scale: PianoRollScale) => ReactNode
   /** Horizontal zoom in pixels per second. */
   pxPerSecond?: number
+  /** Click on empty timeline space (ms position) — marker toggling on the song page. */
+  onTimelineClick?: (ms: number) => void
 }
 
 const ROW = 12 // px per semitone
@@ -39,6 +41,7 @@ export default function PianoRoll({
   onSelect,
   renderOverlay,
   pxPerSecond = 80,
+  onTimelineClick,
 }: PianoRollProps) {
   const { minMidi, maxMidi, durationMs } = useMemo(() => {
     if (!events.length) return { minMidi: 57, maxMidi: 72, durationMs: 1000 }
@@ -62,7 +65,21 @@ export default function PianoRoll({
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-surface">
-      <svg width={width} height={height} role="img" aria-label="Melody piano roll">
+      <svg
+        width={width}
+        height={height}
+        role="img"
+        aria-label="Melody piano roll"
+        style={onTimelineClick ? { cursor: 'crosshair' } : undefined}
+        onClick={
+          onTimelineClick
+            ? (e) => {
+                const x = e.clientX - e.currentTarget.getBoundingClientRect().left
+                if (x >= LABEL_W) onTimelineClick(Math.max(0, ((x - LABEL_W) / pxPerSecond) * 1000))
+              }
+            : undefined
+        }
+      >
         {/* Row guides: line per C, soft fill on black-key rows */}
         {Array.from({ length: rows }, (_, i) => {
           const midi = maxMidi - i
@@ -91,7 +108,13 @@ export default function PianoRoll({
             currentMs != null && currentMs >= e.start_ms && currentMs < e.start_ms + e.duration_ms
           const isSelected = selectedIndex === i
           return (
-            <g key={i} onClick={onSelect ? () => onSelect(i) : undefined} style={onSelect ? { cursor: 'pointer' } : undefined}>
+            <g
+              key={i}
+              // Note clicks select (fretboard sync) — never fall through to
+              // the timeline's marker toggle.
+              onClick={onSelect ? (e) => { e.stopPropagation(); onSelect(i) } : undefined}
+              style={onSelect ? { cursor: 'pointer' } : undefined}
+            >
               <rect
                 x={xOfMs(e.start_ms)}
                 y={yOfMidi(e.midi) + 1.5}

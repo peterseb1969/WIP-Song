@@ -18,30 +18,24 @@ const parseTime = (text: string): number | null => {
   return Number.isFinite(sec) && sec >= 0 ? Math.round(sec * 1000) : null
 }
 
-interface MarkersEditorProps {
+interface MarkerSaveTarget {
   documentId: string
   /** Template version the document is pinned to (PATCH validates against it). */
   templateVersion: number
   song: SongData
-  /** Current playhead (melody playback) — prefills a new marker's start. */
-  currentMs?: number | null
 }
 
 /**
- * Marker list + add/delete for a song (SONG_TRACK v2 `markers`). Saves via
- * PATCH of just the markers field; documents still pinned to template v1
- * (pre-markers) get migrated by one full upsert onto v2 — same identity,
- * same document_id, new version (verified live; PATCH validates against the
- * document's recorded template version, so v1 docs reject unknown fields).
+ * Persist a song's marker list. PATCHes just the markers field; documents
+ * still pinned to template v1 (pre-markers) get migrated by one full upsert
+ * onto v2 — same identity, same document_id, new version (verified live;
+ * PATCH validates against the document's recorded template version, so v1
+ * docs reject unknown fields). Shared by the editor and the piano-roll
+ * click-to-toggle on the song page.
  */
-export default function MarkersEditor({ documentId, templateVersion, song, currentMs }: MarkersEditorProps) {
+export function useSaveMarkers({ documentId, templateVersion, song }: MarkerSaveTarget) {
   const updateDoc = useUpdateDocument()
   const createDoc = useCreateDocument()
-  const markers = song.markers ?? []
-
-  const [label, setLabel] = useState('')
-  const [start, setStart] = useState('')
-  const [end, setEnd] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -67,6 +61,23 @@ export default function MarkersEditor({ documentId, templateVersion, song, curre
       setBusy(false)
     }
   }
+
+  return { save, busy, error, setError }
+}
+
+interface MarkersEditorProps extends MarkerSaveTarget {
+  /** Current playhead (melody playback) — prefills a new marker's start. */
+  currentMs?: number | null
+}
+
+/** Marker list + add/delete form for a song (SONG_TRACK v2 `markers`). */
+export default function MarkersEditor({ documentId, templateVersion, song, currentMs }: MarkersEditorProps) {
+  const { save, busy, error, setError } = useSaveMarkers({ documentId, templateVersion, song })
+  const markers = song.markers ?? []
+
+  const [label, setLabel] = useState('')
+  const [start, setStart] = useState('')
+  const [end, setEnd] = useState('')
 
   const addMarker = () => {
     const startMs = parseTime(start) ?? (currentMs != null ? Math.round(currentMs) : null)
@@ -151,7 +162,7 @@ export default function MarkersEditor({ documentId, templateVersion, song, curre
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add marker
         </button>
         <p className="basis-full text-xs text-text-muted">
-          Start defaults to the playhead while the melody is playing. Markers with an end time become loop presets on the practice page.
+          Start defaults to the playhead while the melody is playing. You can also click the piano roll to drop a marker there — click a marker's flag to remove it. Markers with an end time become loop presets on the practice page.
         </p>
       </div>
       {error && (
