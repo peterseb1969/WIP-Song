@@ -47,6 +47,19 @@ router.use(requireAuth())
 // --- WIP API proxy. MUST be mounted before express.json(): @wip/proxy
 // forwards raw request bodies, and a JSON parser ahead of it would consume
 // the stream and forward empty bodies (see docs/technology-stack.md §4). ---
+// Namespace scoping: wip-deploy dev renders inject the install ADMIN key
+// (multi-namespace), which gets no automatic namespace derivation — reads
+// with value-form template IDs silently return nothing. Pin every proxied
+// WIP call to our namespace via query param unless the caller already
+// scoped it; under the single-namespace runtime key this matches what
+// derivation would do anyway. (@wip/proxy forwards req.url verbatim.)
+const WIP_NAMESPACE = process.env.WIP_NAMESPACE || 'dev-wip-song'
+router.use((req, _res, next) => {
+  if (req.url.startsWith('/wip/api/') && !/[?&]namespace=/.test(req.url)) {
+    req.url += `${req.url.includes('?') ? '&' : '?'}namespace=${encodeURIComponent(WIP_NAMESPACE)}`
+  }
+  next()
+})
 router.use('/wip', wipProxy({
   baseUrl: WIP_BASE_URL,
   apiKey: process.env.WIP_API_KEY || '',

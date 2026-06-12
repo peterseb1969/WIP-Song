@@ -91,6 +91,14 @@ added 2026-06-12).
 
 ## Quirks to remember
 
+- **Multi-namespace (admin) keys get no namespace derivation** — under the
+  wip-deploy dev render the container runs on the install admin key, and
+  reads with value-form template IDs silently return zero rows ("no songs
+  after redeploy", 2026-06-12). Fixed by a server middleware that appends
+  `?namespace=` to every proxied WIP call that isn't already scoped
+  (`server/index.ts`). Body-level `namespace` stays `extra_forbidden` on
+  `POST /documents/query`; the query param is the sanctioned spelling.
+
 - `useDocuments`/GET `/documents` returns one row per document **version** —
   always use `useQueryDocuments` for lists (ARCHITECTURE.md).
 - The WIP compose stack restarted itself once during development (~22:06,
