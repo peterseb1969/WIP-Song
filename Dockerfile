@@ -16,6 +16,12 @@ RUN npm run build          # vite build → /app/dist
 FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# wget for the container healthcheck — node:22-slim ships neither curl nor
+# wget, so the wip-deploy-rendered probe (curl-or-wget) exits 127 and the
+# container reports permanently unhealthy (alpine-based apps get wget via
+# busybox for free).
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
 # Reuse the resolved deps from the build stage (includes tsx, used at runtime).
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
