@@ -120,6 +120,12 @@ added 2026-06-12).
   `?namespace=` to every proxied WIP call that isn't already scoped
   (`server/index.ts`). Body-level `namespace` stays `extra_forbidden` on
   `POST /documents/query`; the query param is the sanctioned spelling.
+  **Exception (found by Peter's import test, 2026-06-12):** the files API
+  (`/api/document-store/files`) takes namespace as a multipart form field
+  and strictly REJECTS the query param (`422 unknown_query_param`) — the
+  middleware skips that path. The platform's namespace spelling is
+  per-endpoint: query-param on documents, form-field on files, forbidden in
+  bodies. Noted on CASE-457.
 
 - `useDocuments`/GET `/documents` returns one row per document **version** —
   always use `useQueryDocuments` for lists (ARCHITECTURE.md).

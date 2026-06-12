@@ -55,7 +55,14 @@ router.use(requireAuth())
 // derivation would do anyway. (@wip/proxy forwards req.url verbatim.)
 const WIP_NAMESPACE = process.env.WIP_NAMESPACE || 'dev-wip-song'
 router.use((req, _res, next) => {
-  if (req.url.startsWith('/wip/api/') && !/[?&]namespace=/.test(req.url)) {
+  if (
+    req.url.startsWith('/wip/api/') &&
+    // The files API takes namespace as a multipart FORM field and strictly
+    // rejects unknown query params (422 unknown_query_param) — never inject
+    // there; @wip/client's uploadFile already scopes via the form field.
+    !req.url.startsWith('/wip/api/document-store/files') &&
+    !/[?&]namespace=/.test(req.url)
+  ) {
     req.url += `${req.url.includes('?') ? '&' : '?'}namespace=${encodeURIComponent(WIP_NAMESPACE)}`
   }
   next()
