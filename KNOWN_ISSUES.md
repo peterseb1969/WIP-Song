@@ -58,7 +58,13 @@ added 2026-06-12).
 
 ## Backlog from Peter (2026-06-11, end of first session)
 
-- **Playback speed** — slow down melody/backing playback for practice.
+- ~~Playback speed~~ **DONE 2026-06-12**: 0.5×/0.75×/1× picker on the song
+  page (melody synth + playhead) and the practice page (reference, backing
+  track via pitch-preserving `playbackRate`, and sing-along — wall-clock
+  samples are mapped onto the target timeline before scoring). Caveat: a
+  saved attempt does not record the speed it was sung at — SONG_ATTEMPT has
+  no such field (adding one = data-model change, Rule 6); a 0.5× attempt
+  scores like any other.
 - **Loops** — repeat a selected section (notes or time range) until nailed.
 - **Markers** — named positions in a song (verse, chorus, "the hard bit") to
   jump to and to anchor loops/exercises. Likely a data-model addition

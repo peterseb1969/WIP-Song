@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useDocument } from '@wip/react'
 import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
+import SpeedControl from '../components/SpeedControl'
 import { BASE } from '../lib/config'
 import { playNotes } from '../lib/audio'
 import type { SongData } from '../lib/types'
@@ -29,6 +30,7 @@ export default function SongDetailPage() {
 
   // Melody synth playback (MIDI imports carry notes, not audio) with playhead.
   const [playheadMs, setPlayheadMs] = useState<number | null>(null)
+  const [speed, setSpeed] = useState(1)
   const stopSynthRef = useRef<(() => void) | null>(null)
   const rafRef = useRef<number | null>(null)
 
@@ -47,10 +49,12 @@ export default function SongDetailPage() {
     stopSynthRef.current = playNotes(
       events.map((e) => ({ ...e, start_ms: e.start_ms - firstStart })),
       stopMelody,
+      speed,
     )
     const startedAt = performance.now()
     const tick = () => {
-      setPlayheadMs(firstStart + (performance.now() - startedAt))
+      // Wall-clock advances 1:1; the melody timeline advances at `speed`.
+      setPlayheadMs(firstStart + (performance.now() - startedAt) * speed)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -134,23 +138,26 @@ export default function SongDetailPage() {
         <section>
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-text">Melody</h2>
-            {playheadMs == null ? (
-              <button
-                type="button"
-                onClick={playMelody}
-                className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              >
-                <Play className="h-4 w-4" /> Play melody
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={stopMelody}
-                className="flex items-center gap-2 rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
-              >
-                <Square className="h-4 w-4" /> Stop
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              <SpeedControl value={speed} onChange={setSpeed} disabled={playheadMs != null} />
+              {playheadMs == null ? (
+                <button
+                  type="button"
+                  onClick={playMelody}
+                  className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <Play className="h-4 w-4" /> Play melody
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopMelody}
+                  className="flex items-center gap-2 rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
+                >
+                  <Square className="h-4 w-4" /> Stop
+                </button>
+              )}
+            </div>
           </div>
           <NoteViews events={song.melody.events} stepping currentMs={playheadMs} />
         </section>

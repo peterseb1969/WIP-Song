@@ -6,6 +6,9 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Playback speed (0.5×/0.75×/1×, pitch-preserving) on the song page and the
+  practice page — applies to reference playback, backing tracks, and
+  sing-along (scoring maps the slowed take onto the target timeline).
 - .kar syllable handling verified via a synthetic Soft-Karaoke test file
   (7 new tests): cross-track syllable attachment, line-marker stripping,
   @-directive exclusion, lyric-track gate, 0x05 precedence.

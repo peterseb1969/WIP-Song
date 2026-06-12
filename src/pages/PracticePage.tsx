@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useDocument, useQueryDocuments, useCreateDocument, useWipClient } from '@wip/react'
 import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check, ChevronRight } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
+import SpeedControl from '../components/SpeedControl'
 import { useSinger } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
@@ -90,6 +91,10 @@ export default function PracticePage() {
   const [recordMs, setRecordMs] = useState<number | null>(null)
   const [scores, setScores] = useState<AttemptScores | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [speed, setSpeed] = useState(1)
+  // Speed the current/last take was sung at — keeps the trace overlay and
+  // scoring consistent even if the picker changes after recording.
+  const takeSpeedRef = useRef(1)
 
   const traceRef = useRef<PitchSample[]>([])
   const [traceTick, setTraceTick] = useState(0)
@@ -112,6 +117,7 @@ export default function PracticePage() {
     if (!song?.audio_backing) return
     const audio = new Audio(`${BASE}wip/files/${song.audio_backing}/content`)
     audio.currentTime = sectionStart / 1000
+    audio.playbackRate = speed // pitch-preserving (preservesPitch defaults true)
     backingRef.current = audio
     const stopAt = Math.min(sectionEnd, sectionStart + totalMs + 1500) / 1000
     audio.ontimeupdate = () => {
@@ -143,7 +149,7 @@ export default function PracticePage() {
       playBackingSlice(done)
       stopListenRef.current = () => stopBacking()
     } else {
-      stopListenRef.current = playNotes(targets, done)
+      stopListenRef.current = playNotes(targets, done, speed)
     }
   }
 
@@ -156,7 +162,13 @@ export default function PracticePage() {
 
     const { blob, samples, durationMs } = await sessionRef.current.stop()
     sessionRef.current = null
-    const result = scoreAttempt(targets, samples)
+    // Samples are wall-clock; at reduced speed the target timeline advanced
+    // slower, so map sample times onto it before scoring. The saved
+    // transcription/duration stay wall-clock (they describe the recording).
+    const takeSpeed = takeSpeedRef.current
+    const scoringSamples =
+      takeSpeed === 1 ? samples : samples.map((s) => ({ ...s, t_ms: Math.round(s.t_ms * takeSpeed) }))
+    const result = scoreAttempt(targets, scoringSamples)
     setScores(result)
     setPhase('saving')
     setSaveError(null)
@@ -216,6 +228,7 @@ export default function PracticePage() {
     traceRef.current = []
     setScores(null)
     setRecordMs(0)
+    takeSpeedRef.current = speed
     try {
       const session = await startRecording((s) => {
         traceRef.current.push(s)
@@ -228,8 +241,8 @@ export default function PracticePage() {
       // Karaoke mode: backing track plays under the recording (use headphones —
       // echo cancellation helps, but speaker bleed can color the pitch trace).
       if (hasBacking) playBackingSlice()
-      // Auto-stop a moment after the target timeline ends.
-      autoStopRef.current = window.setTimeout(() => void finishRecording(), totalMs + 1500)
+      // Auto-stop a moment after the target timeline ends (longer at reduced speed).
+      autoStopRef.current = window.setTimeout(() => void finishRecording(), totalMs / speed + 1500)
     } catch (err) {
       const e = err as DOMException
       const hint =
@@ -309,18 +322,25 @@ export default function PracticePage() {
 
       <NoteViews
         events={targets}
-        currentMs={phase === 'recording' ? recordMs : null}
+        currentMs={phase === 'recording' && recordMs != null ? recordMs * takeSpeedRef.current : null}
         renderOverlay={({ xOfMs, yOfMidi, rowHeight }) => {
+          // Trace samples are wall-clock; project onto the target timeline.
           const pts = traceRef.current
+          const takeSpeed = takeSpeedRef.current
           if (pts.length < 2) return null
           const path = pts
-            .map((s, i) => `${i ? 'L' : 'M'}${xOfMs(s.t_ms).toFixed(1)},${(yOfMidi(s.midi) + rowHeight / 2).toFixed(1)}`)
+            .map((s, i) => `${i ? 'L' : 'M'}${xOfMs(s.t_ms * takeSpeed).toFixed(1)},${(yOfMidi(s.midi) + rowHeight / 2).toFixed(1)}`)
             .join(' ')
           return <path d={path} fill="none" stroke="#2E8B57" strokeWidth={2} opacity={0.85} />
         }}
       />
 
       <div className="flex flex-wrap items-center gap-3">
+        <SpeedControl
+          value={speed}
+          onChange={setSpeed}
+          disabled={phase === 'listening' || phase === 'recording' || phase === 'saving'}
+        />
         <button
           type="button"
           onClick={handleListen}

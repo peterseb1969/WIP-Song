@@ -17,18 +17,19 @@ export function audioContext(): AudioContext {
 /**
  * Play a note sequence as soft synth tones (triangle + quick envelope —
  * pleasant enough for pitch reference, no samples needed).
+ * `rate` slows (<1) or speeds (>1) the timeline; pitch is unaffected.
  * Returns a cancel function.
  */
-export function playNotes(events: NoteEvent[], onDone?: () => void): () => void {
+export function playNotes(events: NoteEvent[], onDone?: () => void, rate = 1): () => void {
   const ac = audioContext()
   const t0 = ac.currentTime + 0.05
   const nodes: OscillatorNode[] = []
 
   let endS = 0
   for (const e of events) {
-    const start = t0 + e.start_ms / 1000
-    const dur = e.duration_ms / 1000
-    endS = Math.max(endS, e.start_ms / 1000 + dur)
+    const start = t0 + e.start_ms / 1000 / rate
+    const dur = e.duration_ms / 1000 / rate
+    endS = Math.max(endS, e.start_ms / 1000 / rate + dur)
 
     const osc = ac.createOscillator()
     osc.type = 'triangle'
