@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Range-aware transposition on the practice page: a ±semitone control plus
+  a one-click suggestion ("Transpose −12 for your range") derived from the
+  singer's profile range (explicit low/high beats the voice-type default;
+  octave shifts only, so the melody keeps its key). Listening, the live
+  trace, and scoring all run in the transposed register; exact fret
+  positions are dropped while transposed; lesson progress COUNTS — singing
+  in your own octave is the fair version of the exercise, not a shortcut.
+
 - Classical notation view: a third renderer next to piano roll and
   fretboard — five-line staff with auto clef (treble / treble-8vb for low
   voices and guitar / bass), note heads with stems and flags by duration,

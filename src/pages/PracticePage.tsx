@@ -9,6 +9,7 @@ import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
+import { singerRange, suggestTransposition, transposeEvents } from '../lib/transpose'
 import { midiToNoteName, midiToFrequency, type NoteEvent } from '../lib/music'
 import { BASE } from '../lib/config'
 import type { ExerciseData, LessonData, SongData } from '../lib/types'
@@ -64,7 +65,7 @@ export default function PracticePage() {
   const song = songDoc?.data as SongData | undefined
   const sectionStart = exercise?.section_start_ms ?? 0
   const sectionEnd = exercise?.section_end_ms ?? Number.MAX_SAFE_INTEGER
-  const targets: NoteEvent[] =
+  const baseTargets: NoteEvent[] =
     exercise?.target_notes?.events ??
     (song?.melody?.events ?? [])
       .filter((e) => e.start_ms >= sectionStart && e.start_ms < sectionEnd)
@@ -83,9 +84,22 @@ export default function PracticePage() {
     return idx >= 0 ? lesson.exercise_refs[idx + 1] ?? null : null
   })()
 
-  const { singerId } = useSinger()
+  const { singerId, singerData } = useSinger()
   const wip = useWipClient()
   const createAttempt = useCreateDocument()
+
+  // Range-aware transposition: shift the whole exercise into the singer's
+  // register (octaves only — same melody, breathable key). Suggested from
+  // the profile range (explicit low/high beats the voice-type default);
+  // applied targets feed everything downstream: listen, loop, trace, score.
+  const [transpose, setTranspose] = useState(0)
+  const range = singerRange(singerData)
+  const suggested = range ? suggestTransposition(baseTargets, range) : 0
+  const targets: NoteEvent[] = useMemo(
+    () => transposeEvents(baseTargets, transpose),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- baseTargets is rebuilt per render; keyed by its sources
+    [doc, songDoc, transpose],
+  )
 
   const [phase, setPhase] = useState<Phase>('idle')
   const [recordMs, setRecordMs] = useState<number | null>(null)
@@ -324,6 +338,7 @@ export default function PracticePage() {
     setSaveError(null)
     setRecordMs(null)
     setLoop(null)
+    setTranspose(0)
     loopingRef.current = false
     traceRef.current = []
     setTraceTick((t) => t + 1)
@@ -465,6 +480,56 @@ export default function PracticePage() {
             </button>
           ))}
         </div>
+
+        <div className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-surface p-0.5">
+          <button
+            type="button"
+            onClick={() => setTranspose((t) => t - 1)}
+            disabled={phase !== 'idle' && phase !== 'done'}
+            aria-label="Transpose down a semitone"
+            className="rounded px-1.5 py-1 text-xs font-medium text-text-muted hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+          >
+            −
+          </button>
+          <span
+            className={`w-14 text-center text-xs tabular-nums ${transpose ? 'font-medium text-primary' : 'text-text-muted'}`}
+            title="Transposition in semitones"
+          >
+            {transpose > 0 ? `+${transpose}` : transpose} st
+          </span>
+          <button
+            type="button"
+            onClick={() => setTranspose((t) => t + 1)}
+            disabled={phase !== 'idle' && phase !== 'done'}
+            aria-label="Transpose up a semitone"
+            className="rounded px-1.5 py-1 text-xs font-medium text-text-muted hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+          >
+            +
+          </button>
+          {transpose !== 0 && (
+            <button
+              type="button"
+              onClick={() => setTranspose(0)}
+              disabled={phase !== 'idle' && phase !== 'done'}
+              className="rounded px-1.5 py-1 text-xs text-text-muted hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+            >
+              reset
+            </button>
+          )}
+        </div>
+        {suggested !== 0 && suggested !== transpose && (phase === 'idle' || phase === 'done') && (
+          <button
+            type="button"
+            onClick={() => setTranspose(suggested)}
+            className="rounded-full border border-accent/40 bg-accent/5 px-3 py-1 text-xs font-medium text-accent hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent/40"
+            title={range ? `Your range: MIDI ${range.low}–${range.high}` : undefined}
+          >
+            Transpose {suggested > 0 ? `+${suggested}` : suggested} for your range
+          </button>
+        )}
+        {transpose !== 0 && hasBacking && (
+          <span className="text-xs text-text-muted">backing track stays in the original key</span>
+        )}
         <button
           type="button"
           onClick={handleListen}

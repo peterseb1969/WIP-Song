@@ -37,9 +37,9 @@ added 2026-06-12).
 
 ## Observations from the first human test
 
-- **A4 drills are brutal for low voices** — Peter (baritone, range top =
-  exactly A4) landed at A♭2. Range-aware target transposition (suggest the
-  singer's octave, score against it) should move up the priority list.
+- ~~A4 drills are brutal for low voices~~ — addressed by range-aware
+  transposition (2026-06-12). Set your voice type or range on the Profile
+  page to get suggestions.
 - Minor data hygiene: two dev-session test attempts carry naive (no-Z)
   `recorded_at` strings that lexically sort above real UTC timestamps; app
   writes are proper ISO-Z. Harmless (different singer), but don't hand-write
@@ -83,8 +83,12 @@ added 2026-06-12).
   audio_backing and audio_full on the song page (`AudioTrackUpload.tsx`);
   real MIME enforced (extension fallback map — octet-stream would be
   rejected by the audio/* file_config).
-- Range-aware transposition (from the first mic test — A4 drills are brutal
-  for low voices).
+- ~~Range-aware transposition~~ **DONE 2026-06-12** (`src/lib/transpose.ts`
+  + practice-page control, 12 tests): octave suggestions from profile
+  range/voice type, manual ±semitone stepper, full pipeline transposed.
+  Caveats: attempts don't record the transposition used (no SONG_ATTEMPT
+  field — Rule 6, same as speed); backing tracks stay in the original key
+  (audio pitch-shift out of scope).
 
 ## Backlog from Peter (2026-06-12)
 
