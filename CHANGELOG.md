@@ -6,6 +6,12 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Deployment verified (2026-06-12): `check-app-deployability` 7/7; included
+  in a wip-deploy dev install via `--app-source` (container healthy, live at
+  `/apps/song/`); manifest committed in World-in-a-Pie. Production image
+  builds via GHCR workflow (`@wip/*` tarballs tracked in-repo, CASE-442);
+  runtime stage installs wget for the healthcheck probe (b2f664c). Docs
+  updated (README, KNOWN_ISSUES).
 
 ## 0.1.0 — 2026-06-11
 

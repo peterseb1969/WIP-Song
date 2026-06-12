@@ -1,7 +1,8 @@
 # Known issues & deliberate deferrals
 
 Status: end of the first build session (2026-06-11, updated after the
-CASE-448/449/450 fixes landed the same evening).
+CASE-448/449/450 fixes landed the same evening; deployment verifications
+added 2026-06-12).
 
 ## Needs human verification
 
@@ -12,8 +13,25 @@ CASE-448/449/450 fixes landed the same evening).
   needed the namespace arg — fixed in 78a7176).
 - **.kar syllable alignment is heuristic-only** — no .kar sample file has
   been parsed yet (IMPORT_FORMATS.md).
-- **`wip-deploy install --app-source` acceptance run not yet executed**
-  (contract verification step 3). Dockerfiles + manifest are in place.
+- ~~`wip-deploy install --app-source` acceptance run not yet executed~~
+  **VERIFIED 2026-06-12**: `check-app-deployability` passed 7/7 and a full
+  dev reinstall included `--app-source song=~/Development/WIP-Song`;
+  container healthy, app live at `https://localhost:8443/apps/song/` behind
+  the auth gateway. The manifest is committed in World-in-a-Pie (6093751).
+  Operational notes from that run:
+  - Song's app lives at the **repo root** — pass the repo itself as the
+    `--app-source` path (unlike clintrial/dnd, which need a subdirectory).
+  - Dev hot-wiring bind-mounts the checkout rw at `/app` with a named
+    volume shadowing `/app/node_modules` — source edits reload instantly,
+    but **dependency changes need `wip-deploy rebuild song`**.
+  - The dev container gets `WIP_API_KEY=${API_KEY}` — the **install admin
+    key**, not the scoped `wip-song-dev` runtime key. The CASE-450 grant
+    setup applies to the scoped-key path only.
+  - `wip-deploy add-app` was blocked by stale deployer state (filed
+    upstream as CASE-455); the full reinstall was the workaround.
+  Separately, the production image is deployed as a **cloud container**
+  (GHCR image from `.github/workflows/build.yaml`); that path surfaced the
+  missing-wget healthcheck failure fixed in b2f664c.
 
 ## Observations from the first human test
 

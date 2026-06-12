@@ -49,14 +49,24 @@ npm test        # unit tests + live data-layer tests (skipped if WIP is down)
 
 ## Deployment
 
-The app satisfies the wip-deployable app contract: `Dockerfile.dev` (dev
-override), two-stage `Dockerfile` (`VITE_BASE_PATH` build ARG, health check
-independent of WIP), base-path-aware client/server, and
-`apps/song/wip-app.yaml` in the WIP repo (ports 3016/5181, `/apps/song`).
+The app satisfies the wip-deployable app contract (verified 2026-06-12:
+`check-app-deployability` 7/7, dev install healthy, app live at
+`https://localhost:8443/apps/song/`): `Dockerfile.dev` (dev override),
+two-stage `Dockerfile` (`VITE_BASE_PATH` build ARG, health check independent
+of WIP), base-path-aware client/server, and `apps/song/wip-app.yaml` in the
+WIP repo (ports 3016/5181, `/apps/song`).
 
 ```bash
 wip-deploy install --target dev --app song --app-source song=~/Development/WIP-Song
 ```
+
+The app lives at the repo root, so the repo itself is the `--app-source`
+path. In dev mode the checkout is bind-mounted into the container (source
+edits hot-reload); dependency changes need `wip-deploy rebuild song`.
+
+For production, `.github/workflows/build.yaml` (manual trigger) builds and
+pushes the image to GHCR; the `@wip/*` tarballs are tracked in `libs/` so CI
+has the full build context.
 
 ## WIP data model
 
