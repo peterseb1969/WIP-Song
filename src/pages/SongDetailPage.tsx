@@ -208,6 +208,7 @@ export default function SongDetailPage() {
             stepping
             currentMs={playheadMs}
             tuning={song.melody.tuning}
+            tempoBpm={song.melody.tempo_bpm ?? song.tempo_bpm}
             onTimelineClick={toggleMarkerAt}
             onTimelineDrag={addRangeMarker}
             renderOverlay={({ xOfMs, height }) =>

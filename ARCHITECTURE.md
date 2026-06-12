@@ -41,6 +41,8 @@ path-prefix contract; every client URL derives from `import.meta.env.BASE_URL`).
   space. `Fretboard.tsx` — positions of the current note; renders the
   melody's actual tuning/string count and, on Guitar Pro imports, the exact
   tab position. `NoteViews.tsx` — both views behind the singer's preference.
+  `NotationView.tsx` — proportional staff notation (auto clef, note values
+  from tempo, sharps/ledger lines; same time axis as the roll).
   `AudioTrackUpload.tsx` — backing-track/full-mix slot on the song page:
   player + upload/replace (file upload → PATCH of just that field).
   `SpeedControl.tsx` — 0.5×/0.75×/1× playback-speed picker.

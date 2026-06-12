@@ -2,11 +2,12 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
 import PianoRoll, { type PianoRollScale } from './PianoRoll'
+import NotationView from './NotationView'
 import Fretboard from './Fretboard'
 import { useSinger } from '../contexts/SingerContext'
 import type { NoteEvent } from '../lib/music'
 
-type ViewMode = 'piano' | 'fretboard' | 'both'
+type ViewKey = 'piano' | 'notation' | 'fretboard'
 
 interface NoteViewsProps {
   events: NoteEvent[]
@@ -17,25 +18,57 @@ interface NoteViewsProps {
   pxPerSecond?: number
   /** Open-string MIDI low → high (Guitar Pro imports) — drives the fretboard. */
   tuning?: number[]
+  /** Song tempo — note values (quarter/eighth…) in the notation view. */
+  tempoBpm?: number
   /** Click on empty piano-roll timeline space (marker toggling, song page). */
   onTimelineClick?: (ms: number) => void
   /** Drag across the piano-roll timeline (range-marker creation, song page). */
   onTimelineDrag?: (startMs: number, endMs: number) => void
 }
 
-/**
- * The combined melody display: piano roll and/or guitar fretboard, with the
- * singer's preferred view as the default. Selecting a note in the roll (or
- * stepping) drives the fretboard.
- */
 const ZOOM_STEPS = [0.25, 0.35, 0.5, 0.7, 1, 1.4, 2, 2.8, 4]
 
-export default function NoteViews({ events, currentMs = null, stepping = false, renderOverlay, pxPerSecond, tuning, onTimelineClick, onTimelineDrag }: NoteViewsProps) {
+/** Legacy singer preference ('piano' | 'fretboard' | 'both') → toggle set. */
+function initialViews(pref?: string): Set<ViewKey> {
+  if (pref === 'piano' || pref === 'notation' || pref === 'fretboard') return new Set<ViewKey>([pref])
+  return new Set<ViewKey>(['piano', 'fretboard'])
+}
+
+/**
+ * The combined melody display: piano roll, staff notation, and/or guitar
+ * fretboard — each independently toggleable (at least one stays on), with
+ * the singer's preferred view as the default. Selecting a note in the roll
+ * or the notation (or stepping) drives the fretboard.
+ */
+export default function NoteViews({
+  events,
+  currentMs = null,
+  stepping = false,
+  renderOverlay,
+  pxPerSecond,
+  tuning,
+  tempoBpm,
+  onTimelineClick,
+  onTimelineDrag,
+}: NoteViewsProps) {
   const { singerData } = useSinger()
-  const [view, setView] = useState<ViewMode>(singerData?.preferences?.note_view || 'both')
+  const [views, setViews] = useState<Set<ViewKey>>(() => initialViews(singerData?.preferences?.note_view))
   const [selected, setSelected] = useState<number | null>(events.length ? 0 : null)
   const [zoomIdx, setZoomIdx] = useState(ZOOM_STEPS.indexOf(1))
   const zoom = ZOOM_STEPS[zoomIdx]!
+  const effectivePx = (pxPerSecond ?? 80) * zoom
+
+  const toggleView = (key: ViewKey) =>
+    setViews((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        if (next.size === 1) return next // keep at least one view
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
 
   // Fretboard target: explicit selection, else the note sounding at the playhead.
   const soundingIndex =
@@ -58,27 +91,36 @@ export default function NoteViews({ events, currentMs = null, stepping = false, 
       return next
     })
 
+  const hasTimeline = views.has('piano') || views.has('notation')
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          {(['piano', 'fretboard', 'both'] as const).map((mode) => (
+          {(
+            [
+              ['piano', 'Piano roll'],
+              ['notation', 'Notation'],
+              ['fretboard', 'Fretboard'],
+            ] as Array<[ViewKey, string]>
+          ).map(([key, label]) => (
             <button
-              key={mode}
+              key={key}
               type="button"
-              onClick={() => setView(mode)}
+              onClick={() => toggleView(key)}
+              aria-pressed={views.has(key)}
               className={`rounded-full border px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 ${
-                view === mode
+                views.has(key)
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-gray-200 bg-surface text-text-muted hover:bg-gray-50'
               }`}
             >
-              {mode === 'piano' ? 'Piano roll' : mode === 'fretboard' ? 'Fretboard' : 'Both'}
+              {label}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
-          {view !== 'fretboard' && (
+          {hasTimeline && (
             <div className="flex items-center gap-0.5 rounded-md border border-gray-200 bg-surface p-0.5">
               <button
                 type="button"
@@ -101,45 +143,55 @@ export default function NoteViews({ events, currentMs = null, stepping = false, 
               </button>
             </div>
           )}
-          {stepping && view !== 'piano' && events.length > 0 && (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              aria-label="Previous note"
-              className="rounded-md p-1 text-text-muted hover:bg-primary/5 hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-xs text-text-muted">
-              note {(selected ?? 0) + 1}/{events.length}
-            </span>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              aria-label="Next note"
-              className="rounded-md p-1 text-text-muted hover:bg-primary/5 hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          {stepping && views.has('fretboard') && events.length > 0 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => step(-1)}
+                aria-label="Previous note"
+                className="rounded-md p-1 text-text-muted hover:bg-primary/5 hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs text-text-muted">
+                note {(selected ?? 0) + 1}/{events.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => step(1)}
+                aria-label="Next note"
+                className="rounded-md p-1 text-text-muted hover:bg-primary/5 hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {(view === 'piano' || view === 'both') && (
+      {views.has('piano') && (
         <PianoRoll
           events={events}
           currentMs={currentMs}
           selectedIndex={selected}
           onSelect={setSelected}
           renderOverlay={renderOverlay}
-          pxPerSecond={(pxPerSecond ?? 80) * zoom}
+          pxPerSecond={effectivePx}
           onTimelineClick={onTimelineClick}
           onTimelineDrag={onTimelineDrag}
         />
       )}
-      {(view === 'fretboard' || view === 'both') && (
+      {views.has('notation') && (
+        <NotationView
+          events={events}
+          currentMs={currentMs}
+          selectedIndex={selected}
+          onSelect={setSelected}
+          pxPerSecond={effectivePx}
+          tempoBpm={tempoBpm}
+        />
+      )}
+      {views.has('fretboard') && (
         <Fretboard midi={fretMidi} exact={fretExact} {...(tuning?.length ? { tuning } : {})} />
       )}
     </div>

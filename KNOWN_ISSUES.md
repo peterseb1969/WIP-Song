@@ -110,8 +110,11 @@ added 2026-06-12).
 - Free practice on a whole song from Song detail (button present, disabled —
   needs either ad-hoc exercises or a song_ref-only practice mode; the
   SONG_ATTEMPT template already supports it).
-- Alternate guitar tunings, capo, chord shapes, tab-timeline view, sheet-music
-  notation (notation = future cased dependency).
+- Alternate guitar tunings, capo, chord shapes, tab-timeline view.
+- ~~Sheet-music notation~~ **proportional staff view DONE 2026-06-12**
+  (`NotationView.tsx`, dependency-free). Engraved notation (bar lines,
+  beaming, rests) stays deferred: needs time signatures in the data model
+  (Rule 6) and a notation engine (VexFlow) — its own cased decision.
 - Per-skill scoring vocabulary; transposition suggestions from vocal range.
 - Component-level UI tests and a Playwright E2E flow (Guide 7 calls for
   them; unit + live data-layer tests exist — see `tests/`). Add before

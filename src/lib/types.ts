@@ -33,7 +33,7 @@ export interface ExerciseData {
   exercise_type: string
   description?: string
   difficulty?: string
-  target_notes?: { events: NoteEvent[] }
+  target_notes?: Melody
   song_ref?: string
   section_start_ms?: number
   section_end_ms?: number

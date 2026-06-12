@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Classical notation view: a third renderer next to piano roll and
+  fretboard — five-line staff with auto clef (treble / treble-8vb for low
+  voices and guitar / bass), note heads with stems and flags by duration,
+  sharps, ledger lines, syllables, playhead + follow-scroll and the shared
+  zoom. Proportional layout (x = time, like the roll) — deliberately not
+  engraved notation: no bar lines (time signatures aren't in the data
+  model), no beaming/rests; engraved rendering would be a VexFlow-class
+  dependency and its own decision. View pills are now independent toggles.
+
 - Zoom + follow-scroll for the piano roll: −/+ zoom control (25%–400%) in
   the note-view toolbar, zoom keeps the viewport centered; during playback
   and recording the roll auto-scrolls so the playhead stays ~35% into view
