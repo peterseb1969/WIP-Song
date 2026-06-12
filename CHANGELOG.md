@@ -6,10 +6,11 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
-- Fix: file uploads broke after the namespace-scoping middleware — the
-  files API rejects a namespace query param (it wants the form field); the
-  middleware now skips that path. Found by Peter's first multi-track import
-  attempt.
+- Fix: the namespace-scoping middleware is now an allowlist of exactly
+  `POST /documents/query` — the only endpoint that needs and accepts
+  `?namespace=`. The blanket version broke file uploads AND document
+  creates/PATCHes (each endpoint spells namespace differently and 422s on
+  unknown query params). Found by Peter's import tests.
 - Markers (SONG_TRACK v2): name positions/ranges in a song ("Chorus",
   "the hard bit") on the song page; they draw on the piano roll and ranged
   markers become one-click loop presets on the practice page. Existing

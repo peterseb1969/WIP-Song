@@ -56,11 +56,14 @@ router.use(requireAuth())
 const WIP_NAMESPACE = process.env.WIP_NAMESPACE || 'dev-wip-song'
 router.use((req, _res, next) => {
   if (
-    req.url.startsWith('/wip/api/') &&
-    // The files API takes namespace as a multipart FORM field and strictly
-    // rejects unknown query params (422 unknown_query_param) — never inject
-    // there; @wip/client's uploadFile already scopes via the form field.
-    !req.url.startsWith('/wip/api/document-store/files') &&
+    // Inject ONLY on the documents query endpoint. It is the one browser
+    // call that resolves value-form template IDs with no other namespace
+    // context (silent zero rows under a multi-namespace/admin key), and the
+    // one endpoint verified to ACCEPT ?namespace=. Everything else rejects
+    // unknown query params with 422 (files: namespace is a form field;
+    // document writes: namespace travels in the body) — a blanket inject
+    // broke uploads and saves (found by Peter's import tests, 2026-06-12).
+    req.url.startsWith('/wip/api/document-store/documents/query') &&
     !/[?&]namespace=/.test(req.url)
   ) {
     req.url += `${req.url.includes('?') ? '&' : '?'}namespace=${encodeURIComponent(WIP_NAMESPACE)}`

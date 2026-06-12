@@ -118,14 +118,14 @@ added 2026-06-12).
   reads with value-form template IDs silently return zero rows ("no songs
   after redeploy", 2026-06-12). Fixed by a server middleware that appends
   `?namespace=` to every proxied WIP call that isn't already scoped
-  (`server/index.ts`). Body-level `namespace` stays `extra_forbidden` on
-  `POST /documents/query`; the query param is the sanctioned spelling.
-  **Exception (found by Peter's import test, 2026-06-12):** the files API
-  (`/api/document-store/files`) takes namespace as a multipart form field
-  and strictly REJECTS the query param (`422 unknown_query_param`) — the
-  middleware skips that path. The platform's namespace spelling is
-  per-endpoint: query-param on documents, form-field on files, forbidden in
-  bodies. Noted on CASE-457.
+  (`server/index.ts`). The injection is an ALLOWLIST of exactly one
+  endpoint — `POST /documents/query` — because the namespace spelling is
+  per-endpoint (found the hard way via Peter's import tests, 2026-06-12):
+  query accepts `?namespace=`; the files API wants a multipart form field
+  and 422s on the query param; document writes/PATCH want it in the body
+  and ALSO 422 on the query param; `namespace` in the query body is
+  `extra_forbidden`. Blanket injection broke uploads and saves. Noted on
+  CASE-457.
 
 - `useDocuments`/GET `/documents` returns one row per document **version** —
   always use `useQueryDocuments` for lists (ARCHITECTURE.md).
