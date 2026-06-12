@@ -12,7 +12,8 @@ Endpoint: `POST /server-api/import/parse?filename=…` with raw bytes as
 
 | Source | Mapping |
 |---|---|
-| Note on/off per (track, channel) | One melody **candidate** per pair; user picks in the import dialog. Channel 10 (drums) excluded. Vocal-looking names (`vox/vocal/melod/lead/sing/kara`) sorted first and starred. |
+| Note on/off per (track, channel) | One melody **candidate** per pair; user picks **one or more** in the import dialog (multi-select since 2026-06-12). Channel 10 (drums) excluded. Vocal-looking names (`vox/vocal/melod/lead/sing/kara`) sorted first and starred. |
+| Multiple tracks selected | One `SONG_TRACK` document per track, sharing one uploaded original file. SONG_TRACK identity is `(title, artist)`, so multi-track imports append the track name to each title — `Bohemian Rhapsody (Lead Vox)` — plus the channel when names collide. Single-track imports keep the plain title. |
 | Note-on velocity 0 | Treated as note-off (running-status files use this heavily). |
 | Overlapping notes in a candidate | Monophonic-ized: a note is truncated at the next note's start. |
 | Tempo meta (0x51), all of them | Tick→ms conversion walks the full tempo map (sample file has 3 tempo changes). `tempo_bpm` stores the *first* tempo for display. |
@@ -44,6 +45,15 @@ encoding quirks no synthetic covers.
 
 ## Planned, not implemented
 
+- **Guitar Pro (.gp3/.gp4/.gp5/.gpx/.gp)** — requested by Peter 2026-06-12
+  (he's a guitarist). Two format families: the classic binary formats
+  (.gp3–.gp5, reverse-engineered and well documented) and the modern
+  container formats (.gpx is a proprietary "BCFZ" archive; .gp since GP7 is
+  a zip holding `Content/score.gpif` XML). Notes carry string+fret — exact
+  fretboard positions for the fretboard view, no position inference needed —
+  plus rhythm, tempo map, and per-track tuning. Likely first cut: .gp
+  (zip+XML, no dependency) and/or .gp5; multi-track import (2026-06-12)
+  already gives each track a home.
 - **UltraStar (.txt)** — `: start dur pitch syllable` lines; pitches relative
   to a `#GAP`/`#BPM` header. Candidate for the next import iteration.
 - **LRC (.lrc)** — lyrics+timing only (no pitch); would attach syllables to an

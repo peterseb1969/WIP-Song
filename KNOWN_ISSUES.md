@@ -75,6 +75,15 @@ added 2026-06-12).
 - Range-aware transposition (from the first mic test — A4 drills are brutal
   for low voices).
 
+## Backlog from Peter (2026-06-12)
+
+- **Guitar Pro import (.gp/.gp5/…)** — see IMPORT_FORMATS.md "Planned" for
+  the format-family breakdown; string+fret data would feed the fretboard
+  view exactly.
+- ~~Multi-track MIDI import~~ **DONE 2026-06-12**: the import dialog
+  multi-selects tracks; one SONG_TRACK per track, shared original file,
+  track names appended to titles to keep identities distinct.
+
 ## Deferred by design (v1 scope cuts — DESIGN.md)
 
 - Lesson/exercise **authoring UI** (curriculum is seed-data only).

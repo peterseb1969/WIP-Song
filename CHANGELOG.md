@@ -6,6 +6,9 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Multi-track MIDI import: select several tracks in one go — one song per
+  track, shared original file, track names appended to titles (identity is
+  title+artist). Guitar Pro import added to the planned-formats list.
 - Fix: songs invisible when the app runs on a multi-namespace (admin) API
   key — e.g. the wip-deploy dev render. The server proxy now pins every
   unscoped WIP call to the app namespace via `?namespace=`; under the
