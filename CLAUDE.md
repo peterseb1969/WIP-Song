@@ -49,7 +49,7 @@ WIP_API_KEY=<plaintext_key from response>
 
 Because this key is scoped to a single namespace (`dev-wip-song`), WIP derives the namespace automatically when you omit the `namespace` parameter. This means synonym resolution works without passing `namespace` on every API call.
 
-**Write access needs an explicit grant (CASE-450 — implemented).** A namespace-scoped key can *read* its namespace but document writes need a write grant. Since CASE-450 landed: pass `grant_permission: "write"` to `create_api_key` at key creation (one call, key fully usable), or manage grants via the MCP tools `list_grants` / `create_grant` / `revoke_grant` or `@wip/client`'s `registry.createGrants`. Grant subjects are canonical bare key names now (the old `apikey:`-prefix path-dependence is fixed; legacy dual-spelled grants keep matching via a compat shim). This app’s dev key `wip-song-dev-r2` carries write on `dev-wip-song` (rotated 2026-06-12 from `wip-song-dev` after a console exposure; same scoping).
+**Grants (CASE-450):** namespace *scoping* gives a key read visibility only — **writes need an explicit namespace grant**. The scaffold provisioned this key with `grant_permission: write`, so it works out of the box. If you ever create a key by hand, pass `grant_permission` on `create_api_key` / `POST /api/registry/api-keys`, or add a grant afterwards (`create_grant` MCP tool, `registry.createGrants` in @wip/client, or `POST /api/registry/namespaces/<ns>/grants`). Grant subject for api keys is the bare key name. This app's dev key is `wip-song-dev-r2` (rotated 2026-06-12 from `wip-song-dev` after a console exposure; write-granted on `dev-wip-song`).
 
 **Key management:** Runtime keys can be listed, updated, and revoked via the Registry API. See WIP's `docs/api-key-management.md` for details.
 
@@ -94,7 +94,7 @@ Otherwise start with:
 - `/wip-wake` — Recover context after compaction or at start of a new session
 - `/wip-report` — Capture fireside chat or trigger session summary
 - `/wip-deploy redeploy|verify` — Redeploy this YAC's own source to the running dev install (or smoke-only). Subset of BE-YAC's `/wip-deploy` — install is BE-YAC's territory (CASE-300)
-- `/wip-case file|list|read|respond|comment|close|implement` — Cross-agent case management. **Filing must use `bash yac-discussions/case-helper.sh claim <slug>`** (atomic, race-safe; CASE-67 + CASE-301 collisions made this discipline mandatory — see CASE-306). After writing the body, mirror into the `kb` namespace via `python3 ../FR-YAC/tools/add-to-kb.py yac-discussions/CASE-NN-...md` (CASE-307). The dual-write is the canonical KB population path; not optional.
+- `/wip-case file|list|read|respond|comment|close|implement` — Cross-agent case management. **Filing must allocate via the served allocator** — `bash ~/.cache/wip-kb-client/kb-client.sh case_allocate.py …` (atomic Registry-synonym claim, race-safe; CASE-425/437 — it replaced the FS `case-helper.sh claim` path that CASE-67/301 collisions made mandatory, CASE-306). After writing the body, mirror via `bash ~/.cache/wip-kb-client/kb-client.sh add-to-kb.py yac-discussions/CASE-NN-...md` (CASE-307/440). Single-canonical write; not optional. Runner missing → install one-liner in the case-workflow playbook.
 
 **Context management:** When context reaches ~70-80%, the human should tell you to run `/wip-wake` or save state (DESIGN.md, memory files) before compaction hits.
 
@@ -136,7 +136,7 @@ Read these before starting:
 
 ## MCP
 
-WIP is accessed exclusively via MCP tools (88 tools, 5 resources). Before starting:
+WIP is accessed exclusively via MCP tools (94 tools, 5 resources). Before starting:
 - Read `wip://conventions` — bulk-first API, identity hashing, versioning
 - Read `wip://data-model` — terminologies, templates, documents, fields, term-relations
 - Read `wip://ponifs` — 8 behaviours that trip up every new developer
