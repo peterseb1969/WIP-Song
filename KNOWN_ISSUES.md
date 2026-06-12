@@ -69,9 +69,10 @@ added 2026-06-12).
 - **Markers** — named positions in a song (verse, chorus, "the hard bit") to
   jump to and to anchor loops/exercises. Likely a data-model addition
   (markers on SONG_TRACK) → Rule 6: through Phase 2/3 first.
-- **Background tracks** — attach/import real audio (backing/full mix) to
-  songs, e.g. upload MP3 alongside an imported MIDI; the fields exist
-  (audio_full/audio_backing), the upload UI doesn't yet.
+- ~~Background tracks~~ **DONE 2026-06-12**: upload/replace UI for
+  audio_backing and audio_full on the song page (`AudioTrackUpload.tsx`);
+  real MIME enforced (extension fallback map — octet-stream would be
+  rejected by the audio/* file_config).
 - Range-aware transposition (from the first mic test — A4 drills are brutal
   for low voices).
 

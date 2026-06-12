@@ -4,14 +4,11 @@ import { useDocument } from '@wip/react'
 import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
-import { BASE } from '../lib/config'
+import AudioTrackUpload from '../components/AudioTrackUpload'
 import { playNotes } from '../lib/audio'
 import type { SongData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
-
-/** Audio content via @wip/proxy's file streaming route (browser never sees the key). */
-const fileContentUrl = (fileId: string) => `${BASE}wip/files/${fileId}/content`
 
 function Meta({ label, value }: { label: string; value?: string | number }) {
   if (value == null || value === '') return null
@@ -121,17 +118,23 @@ export default function SongDetailPage() {
         <Meta label="Notes" value={song.melody?.events.length} />
       </dl>
 
-      {song.audio_backing && (
-        <section>
-          <h2 className="mb-2 text-xl font-semibold text-text">Backing track</h2>
-          <audio controls preload="none" src={fileContentUrl(song.audio_backing)} className="w-full" />
-        </section>
-      )}
-      {song.audio_full && (
-        <section>
-          <h2 className="mb-2 text-xl font-semibold text-text">Full mix</h2>
-          <audio controls preload="none" src={fileContentUrl(song.audio_full)} className="w-full" />
-        </section>
+      {doc && (
+        <>
+          <AudioTrackUpload
+            documentId={doc.document_id}
+            field="audio_backing"
+            label="Backing track"
+            fileId={song.audio_backing}
+            songTitle={song.title}
+          />
+          <AudioTrackUpload
+            documentId={doc.document_id}
+            field="audio_full"
+            label="Full mix"
+            fileId={song.audio_full}
+            songTitle={song.title}
+          />
+        </>
       )}
 
       {song.melody?.events.length ? (

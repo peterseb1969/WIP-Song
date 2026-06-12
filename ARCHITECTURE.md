@@ -38,8 +38,12 @@ path-prefix contract; every client URL derives from `import.meta.env.BASE_URL`).
   subject).
 - `components/PianoRoll.tsx` — SVG time×MIDI renderer; `renderOverlay(scale)`
   lets the practice page draw the live pitch trace in the same coordinate
-  space. `Fretboard.tsx` — EADGBE positions of the current note.
-  `NoteViews.tsx` — both views behind the singer's preference.
+  space. `Fretboard.tsx` — positions of the current note; renders the
+  melody's actual tuning/string count and, on Guitar Pro imports, the exact
+  tab position. `NoteViews.tsx` — both views behind the singer's preference.
+  `AudioTrackUpload.tsx` — backing-track/full-mix slot on the song page:
+  player + upload/replace (file upload → PATCH of just that field).
+  `SpeedControl.tsx` — 0.5×/0.75×/1× playback-speed picker.
 - `lib/pitch.ts` — autocorrelation pitch detection (~30 Hz sampling);
   `lib/audio.ts` — tone synthesis + MediaRecorder capture; `lib/scoring.ts` —
   per-note credit (quartertone tolerance, octave-equivalence half credit) +

@@ -6,6 +6,11 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Background-track upload: the song page's backing-track and full-mix
+  sections now upload/replace audio (MP3/WAV/OGG…) — file goes to WIP
+  storage with its real MIME, then a PATCH sets just that field (new
+  document version; melody and identity untouched). Karaoke-style practice
+  needs no console detour anymore.
 - Fretboard view honors exact tab positions: on Guitar Pro imports the
   played string+fret is THE emphasized marker (alternatives faint, caption
   "from the tab"), and the board renders the track's actual tuning and
