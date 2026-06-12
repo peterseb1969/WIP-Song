@@ -322,6 +322,7 @@ export default function PracticePage() {
 
       <NoteViews
         events={targets}
+        tuning={exercise?.target_notes ? undefined : song?.melody?.tuning}
         currentMs={phase === 'recording' && recordMs != null ? recordMs * takeSpeedRef.current : null}
         renderOverlay={({ xOfMs, yOfMidi, rowHeight }) => {
           // Trace samples are wall-clock; project onto the target timeline.

@@ -6,6 +6,10 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Fretboard view honors exact tab positions: on Guitar Pro imports the
+  played string+fret is THE emphasized marker (alternatives faint, caption
+  "from the tab"), and the board renders the track's actual tuning and
+  string count (bass tracks get 4 strings).
 - Guitar Pro 3/4/5 import (.gp3/.gp4/.gp5): dependency-free parser (byte
   layout from TuxGuitar's readers), file-internal title/artist prefill,
   per-track tunings, and exact string+fret positions on every melody event

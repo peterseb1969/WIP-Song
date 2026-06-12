@@ -159,7 +159,7 @@ export default function SongDetailPage() {
               )}
             </div>
           </div>
-          <NoteViews events={song.melody.events} stepping currentMs={playheadMs} />
+          <NoteViews events={song.melody.events} stepping currentMs={playheadMs} tuning={song.melody.tuning} />
         </section>
       ) : (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

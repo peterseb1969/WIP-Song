@@ -15,6 +15,8 @@ interface NoteViewsProps {
   stepping?: boolean
   renderOverlay?: (scale: PianoRollScale) => ReactNode
   pxPerSecond?: number
+  /** Open-string MIDI low → high (Guitar Pro imports) — drives the fretboard. */
+  tuning?: number[]
 }
 
 /**
@@ -22,7 +24,7 @@ interface NoteViewsProps {
  * singer's preferred view as the default. Selecting a note in the roll (or
  * stepping) drives the fretboard.
  */
-export default function NoteViews({ events, currentMs = null, stepping = false, renderOverlay, pxPerSecond }: NoteViewsProps) {
+export default function NoteViews({ events, currentMs = null, stepping = false, renderOverlay, pxPerSecond, tuning }: NoteViewsProps) {
   const { singerData } = useSinger()
   const [view, setView] = useState<ViewMode>(singerData?.preferences?.note_view || 'both')
   const [selected, setSelected] = useState<number | null>(events.length ? 0 : null)
@@ -33,7 +35,13 @@ export default function NoteViews({ events, currentMs = null, stepping = false, 
       ? events.findIndex((e) => currentMs >= e.start_ms && currentMs < e.start_ms + e.duration_ms)
       : -1
   const fretIndex = soundingIndex >= 0 ? soundingIndex : selected
-  const fretMidi = fretIndex != null && fretIndex >= 0 ? events[fretIndex]?.midi ?? null : null
+  const fretEvent = fretIndex != null && fretIndex >= 0 ? events[fretIndex] : undefined
+  const fretMidi = fretEvent?.midi ?? null
+  // Exact tab position (Guitar Pro imports) beats midi-derived alternatives.
+  const fretExact =
+    fretEvent?.string != null && fretEvent.fret != null
+      ? { string: fretEvent.string, fret: fretEvent.fret }
+      : null
 
   const step = (delta: number) =>
     setSelected((s) => {
@@ -96,7 +104,9 @@ export default function NoteViews({ events, currentMs = null, stepping = false, 
           pxPerSecond={pxPerSecond}
         />
       )}
-      {(view === 'fretboard' || view === 'both') && <Fretboard midi={fretMidi} />}
+      {(view === 'fretboard' || view === 'both') && (
+        <Fretboard midi={fretMidi} exact={fretExact} {...(tuning?.length ? { tuning } : {})} />
+      )}
     </div>
   )
 }

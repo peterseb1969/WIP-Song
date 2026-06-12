@@ -44,10 +44,14 @@ export interface Melody {
 /** Guitar standard tuning, low to high: E2 A2 D3 G3 B3 E4. */
 export const GUITAR_TUNING_MIDI = [40, 45, 50, 55, 59, 64] as const
 
-/** All playable (string, fret) positions for a MIDI note within maxFret. String 0 = low E. */
-export function fretPositions(midi: number, maxFret = 15): Array<{ string: number; fret: number }> {
+/** All playable (string, fret) positions for a MIDI note within maxFret. String 0 = lowest. */
+export function fretPositions(
+  midi: number,
+  maxFret = 15,
+  tuning: readonly number[] = GUITAR_TUNING_MIDI,
+): Array<{ string: number; fret: number }> {
   const positions: Array<{ string: number; fret: number }> = []
-  GUITAR_TUNING_MIDI.forEach((open, string) => {
+  tuning.forEach((open, string) => {
     const fret = midi - open
     if (fret >= 0 && fret <= maxFret) positions.push({ string, fret })
   })
