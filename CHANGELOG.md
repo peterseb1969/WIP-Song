@@ -4,7 +4,9 @@
 
 - Markers by mouse: click empty piano-roll space to drop a marker there
   (auto-named); each marker now has a fat flag handle at the top of its
-  line — click it to remove. Note clicks still select for the fretboard.
+  line — click it to remove. Drag across the roll to create a RANGE marker
+  (live highlight while dragging; ranges become loop presets on the
+  practice page). Note clicks still select for the fretboard.
 
 - Song detail: ▶ Play melody — synthesizes imported note data (MIDI carries
   no audio) with a moving playhead; skips leading silence.

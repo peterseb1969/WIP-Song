@@ -31,6 +31,11 @@ export default function SongDetailPage() {
     templateVersion: doc?.template_version ?? 1,
     song: song ?? ({ title: '', artist: '' } as SongData),
   })
+  const nextMarkerLabel = () => {
+    let n = 1
+    while ((song?.markers ?? []).some((m) => m.label === `Marker ${n}`)) n++
+    return `Marker ${n}`
+  }
   /** Toggle from a piano-roll click: hit an existing marker (±250 ms) →
    *  remove it; empty space → add an auto-named point marker there. */
   const toggleMarkerAt = (ms: number) => {
@@ -41,10 +46,17 @@ export default function SongDetailPage() {
       void markerSave.save(markers.filter((_, i) => i !== hit))
       return
     }
-    let n = 1
-    while (markers.some((m) => m.label === `Marker ${n}`)) n++
     void markerSave.save(
-      [...markers, { label: `Marker ${n}`, start_ms: Math.round(ms) } as Marker].sort((a, b) => a.start_ms - b.start_ms),
+      [...markers, { label: nextMarkerLabel(), start_ms: Math.round(ms) } as Marker].sort((a, b) => a.start_ms - b.start_ms),
+    )
+  }
+  /** Drag on the roll → auto-named RANGE marker (loopable on the practice page). */
+  const addRangeMarker = (startMs: number, endMs: number) => {
+    if (!doc || !song || markerSave.busy || endMs - startMs < 150) return
+    void markerSave.save(
+      [...(song.markers ?? []), { label: nextMarkerLabel(), start_ms: Math.round(startMs), end_ms: Math.round(endMs) } as Marker].sort(
+        (a, b) => a.start_ms - b.start_ms,
+      ),
     )
   }
 
@@ -197,6 +209,7 @@ export default function SongDetailPage() {
             currentMs={playheadMs}
             tuning={song.melody.tuning}
             onTimelineClick={toggleMarkerAt}
+            onTimelineDrag={addRangeMarker}
             renderOverlay={({ xOfMs, height }) =>
               (song.markers ?? []).map((m, idx) => {
                 const x = xOfMs(m.start_ms)
@@ -213,6 +226,7 @@ export default function SongDetailPage() {
                         e.stopPropagation()
                         if (!markerSave.busy) void markerSave.save((song.markers ?? []).filter((_, i) => i !== idx))
                       }}
+                      onPointerDown={(e) => e.stopPropagation()}
                       style={{ cursor: 'pointer' }}
                     >
                       <title>{`Remove marker "${m.label}"`}</title>

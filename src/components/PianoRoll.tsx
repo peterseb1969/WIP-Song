@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { midiToNoteName, type NoteEvent } from '../lib/music'
 
@@ -23,7 +23,12 @@ interface PianoRollProps {
   pxPerSecond?: number
   /** Click on empty timeline space (ms position) — marker toggling on the song page. */
   onTimelineClick?: (ms: number) => void
+  /** Drag across the timeline (ms range) — range-marker creation on the song page. */
+  onTimelineDrag?: (startMs: number, endMs: number) => void
 }
+
+/** Drags shorter than this (px) count as clicks. */
+const DRAG_THRESHOLD = 6
 
 const ROW = 12 // px per semitone
 const PAD_SEMITONES = 2
@@ -42,7 +47,11 @@ export default function PianoRoll({
   renderOverlay,
   pxPerSecond = 80,
   onTimelineClick,
+  onTimelineDrag,
 }: PianoRollProps) {
+  // Live drag state (px within the svg) for the range highlight.
+  const dragStartRef = useRef<number | null>(null)
+  const [dragRange, setDragRange] = useState<[number, number] | null>(null)
   const { minMidi, maxMidi, durationMs } = useMemo(() => {
     if (!events.length) return { minMidi: 57, maxMidi: 72, durationMs: 1000 }
     let lo = Infinity, hi = -Infinity, end = 0
@@ -70,15 +79,48 @@ export default function PianoRoll({
         height={height}
         role="img"
         aria-label="Melody piano roll"
-        style={onTimelineClick ? { cursor: 'crosshair' } : undefined}
-        onClick={
-          onTimelineClick
+        style={onTimelineClick || onTimelineDrag ? { cursor: 'crosshair', touchAction: 'none' } : undefined}
+        onPointerDown={
+          onTimelineClick || onTimelineDrag
             ? (e) => {
                 const x = e.clientX - e.currentTarget.getBoundingClientRect().left
-                if (x >= LABEL_W) onTimelineClick(Math.max(0, ((x - LABEL_W) / pxPerSecond) * 1000))
+                if (x < LABEL_W) return
+                dragStartRef.current = x
+                e.currentTarget.setPointerCapture(e.pointerId)
               }
             : undefined
         }
+        onPointerMove={
+          onTimelineDrag
+            ? (e) => {
+                const start = dragStartRef.current
+                if (start == null) return
+                const x = e.clientX - e.currentTarget.getBoundingClientRect().left
+                setDragRange(Math.abs(x - start) >= DRAG_THRESHOLD ? [Math.min(start, x), Math.max(start, x)] : null)
+              }
+            : undefined
+        }
+        onPointerUp={
+          onTimelineClick || onTimelineDrag
+            ? (e) => {
+                const start = dragStartRef.current
+                dragStartRef.current = null
+                setDragRange(null)
+                if (start == null) return
+                const x = e.clientX - e.currentTarget.getBoundingClientRect().left
+                const msOf = (px: number) => Math.max(0, ((Math.max(px, LABEL_W) - LABEL_W) / pxPerSecond) * 1000)
+                if (Math.abs(x - start) >= DRAG_THRESHOLD && onTimelineDrag) {
+                  onTimelineDrag(msOf(Math.min(start, x)), msOf(Math.max(start, x)))
+                } else {
+                  onTimelineClick?.(msOf(start))
+                }
+              }
+            : undefined
+        }
+        onPointerCancel={() => {
+          dragStartRef.current = null
+          setDragRange(null)
+        }}
       >
         {/* Row guides: line per C, soft fill on black-key rows */}
         {Array.from({ length: rows }, (_, i) => {
@@ -111,8 +153,9 @@ export default function PianoRoll({
             <g
               key={i}
               // Note clicks select (fretboard sync) — never fall through to
-              // the timeline's marker toggle.
+              // the timeline's marker toggle/drag (pointerdown starts those).
               onClick={onSelect ? (e) => { e.stopPropagation(); onSelect(i) } : undefined}
+              onPointerDown={onSelect ? (e) => e.stopPropagation() : undefined}
               style={onSelect ? { cursor: 'pointer' } : undefined}
             >
               <rect
@@ -138,6 +181,15 @@ export default function PianoRoll({
         )}
 
         {renderOverlay?.(scale)}
+
+        {/* Live drag highlight (range-marker creation) */}
+        {dragRange && (
+          <g pointerEvents="none">
+            <rect x={dragRange[0]} y={0} width={dragRange[1] - dragRange[0]} height={height} fill="#2B579A" opacity={0.12} />
+            <line x1={dragRange[0]} y1={0} x2={dragRange[0]} y2={height} stroke="#2B579A" opacity={0.7} />
+            <line x1={dragRange[1]} y1={0} x2={dragRange[1]} y2={height} stroke="#2B579A" opacity={0.7} />
+          </g>
+        )}
       </svg>
     </div>
   )

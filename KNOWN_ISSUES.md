@@ -76,8 +76,9 @@ added 2026-06-12).
   the practice page. v1-pinned docs migrate transparently on first marker
   save; re-imports preserve markers (merge-over-existing). Mouse support
   added same day: click the roll to drop a marker, click its flag handle
-  (fat target at the top) to remove. Deferred: jump-to-marker playback,
-  marker rename (delete+add for now), drag-to-create range markers.
+  (fat target at the top) to remove, drag across the roll to create a
+  range marker. Deferred: jump-to-marker playback, marker rename
+  (delete+add for now).
 - ~~Background tracks~~ **DONE 2026-06-12**: upload/replace UI for
   audio_backing and audio_full on the song page (`AudioTrackUpload.tsx`);
   real MIME enforced (extension fallback map — octet-stream would be

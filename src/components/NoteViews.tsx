@@ -19,6 +19,8 @@ interface NoteViewsProps {
   tuning?: number[]
   /** Click on empty piano-roll timeline space (marker toggling, song page). */
   onTimelineClick?: (ms: number) => void
+  /** Drag across the piano-roll timeline (range-marker creation, song page). */
+  onTimelineDrag?: (startMs: number, endMs: number) => void
 }
 
 /**
@@ -26,7 +28,7 @@ interface NoteViewsProps {
  * singer's preferred view as the default. Selecting a note in the roll (or
  * stepping) drives the fretboard.
  */
-export default function NoteViews({ events, currentMs = null, stepping = false, renderOverlay, pxPerSecond, tuning, onTimelineClick }: NoteViewsProps) {
+export default function NoteViews({ events, currentMs = null, stepping = false, renderOverlay, pxPerSecond, tuning, onTimelineClick, onTimelineDrag }: NoteViewsProps) {
   const { singerData } = useSinger()
   const [view, setView] = useState<ViewMode>(singerData?.preferences?.note_view || 'both')
   const [selected, setSelected] = useState<number | null>(events.length ? 0 : null)
@@ -105,6 +107,7 @@ export default function NoteViews({ events, currentMs = null, stepping = false, 
           renderOverlay={renderOverlay}
           pxPerSecond={pxPerSecond}
           onTimelineClick={onTimelineClick}
+          onTimelineDrag={onTimelineDrag}
         />
       )}
       {(view === 'fretboard' || view === 'both') && (
