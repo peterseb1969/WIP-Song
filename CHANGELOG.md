@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Zoom + follow-scroll for the piano roll: −/+ zoom control (25%–400%) in
+  the note-view toolbar, zoom keeps the viewport centered; during playback
+  and recording the roll auto-scrolls so the playhead stays ~35% into view
+  and the notes glide under it.
+
 - Markers by mouse: click empty piano-roll space to drop a marker there
   (auto-named); each marker now has a fat flag handle at the top of its
   line — click it to remove. Drag across the roll to create a RANGE marker

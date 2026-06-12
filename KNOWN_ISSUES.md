@@ -88,11 +88,11 @@ added 2026-06-12).
 
 ## Backlog from Peter (2026-06-12)
 
-- **Zoom in/out** — zoom the note views (piano roll / fretboard timeline) in
-  and out; long songs are cramped at the fixed px-per-second scale.
-- **Smooth scrolling** (Peter, 2026-06-12 evening) — the note view should
-  scroll smoothly with playback/recording so the playhead stays in view
-  (long songs run off-screen today); pairs with zoom as one viewport rework.
+- ~~Zoom in/out~~ / ~~Smooth scrolling~~ **DONE 2026-06-12**: zoom control
+  (25%–400%, center-preserving) on the note views; the roll follows the
+  playhead during playback/recording (playhead pinned ~35% into the
+  viewport). Manual scrolling is overridden while a playhead is active —
+  revisit if that annoys.
 
 - ~~Guitar Pro import~~ **GP3/4/5 DONE 2026-06-12** (`server/lib/gp.ts`,
   12 tests against the four-sample corpus; exact string+fret+tuning stored

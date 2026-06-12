@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { midiToNoteName, type NoteEvent } from '../lib/music'
 
@@ -52,6 +52,29 @@ export default function PianoRoll({
   // Live drag state (px within the svg) for the range highlight.
   const dragStartRef = useRef<number | null>(null)
   const [dragRange, setDragRange] = useState<[number, number] | null>(null)
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  // Follow the playhead: keep it ~35% into the viewport so the notes glide
+  // under it during playback/recording (smooth-scroll backlog item).
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || currentMs == null) return
+    const x = LABEL_W + (currentMs / 1000) * pxPerSecond
+    const target = Math.max(0, x - el.clientWidth * 0.35)
+    if (Math.abs(el.scrollLeft - target) > 1) el.scrollLeft = target
+  }, [currentMs, pxPerSecond])
+  // Zoom keeps the viewport center stable (no playhead) — rescale scrollLeft
+  // around the midpoint when pxPerSecond changes.
+  const prevPxRef = useRef(pxPerSecond)
+  useEffect(() => {
+    const el = scrollRef.current
+    const prev = prevPxRef.current
+    prevPxRef.current = pxPerSecond
+    if (!el || prev === pxPerSecond || currentMs != null) return
+    const mid = el.scrollLeft + el.clientWidth / 2 - LABEL_W
+    el.scrollLeft = Math.max(0, (mid * pxPerSecond) / prev + LABEL_W - el.clientWidth / 2)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only rescale on zoom changes
+  }, [pxPerSecond])
   const { minMidi, maxMidi, durationMs } = useMemo(() => {
     if (!events.length) return { minMidi: 57, maxMidi: 72, durationMs: 1000 }
     let lo = Infinity, hi = -Infinity, end = 0
@@ -73,7 +96,7 @@ export default function PianoRoll({
   const scale: PianoRollScale = { xOfMs, yOfMidi, rowHeight: ROW, width, height }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-surface">
+    <div ref={scrollRef} className="overflow-x-auto rounded-lg border border-gray-200 bg-surface">
       <svg
         width={width}
         height={height}
