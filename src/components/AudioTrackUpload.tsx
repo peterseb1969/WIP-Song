@@ -49,7 +49,10 @@ export default function AudioTrackUpload({ documentId, field, label, fileId, son
         { description: `${label} — ${songTitle}`, tags: [field] },
         WIP_NAMESPACE,
       )
-      await updateDoc.mutateAsync({ documentId, patch: { data: { [field]: upload.file_id } } })
+      // Merge patches apply at the data level — field keys directly, no
+      // {data: …} wrapper (verified against the live API: the wrapper fails
+      // with "Unknown field 'data' is not declared in the template").
+      await updateDoc.mutateAsync({ documentId, patch: { [field]: upload.file_id } })
     } catch (err) {
       setError((err as Error).message)
     } finally {

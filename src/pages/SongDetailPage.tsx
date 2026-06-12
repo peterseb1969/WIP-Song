@@ -5,6 +5,7 @@ import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-rea
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import AudioTrackUpload from '../components/AudioTrackUpload'
+import MarkersEditor from '../components/MarkersEditor'
 import { playNotes } from '../lib/audio'
 import type { SongData } from '../lib/types'
 
@@ -120,6 +121,12 @@ export default function SongDetailPage() {
 
       {doc && (
         <>
+          <MarkersEditor
+            documentId={doc.document_id}
+            templateVersion={doc.template_version ?? 1}
+            song={song}
+            currentMs={playheadMs}
+          />
           <AudioTrackUpload
             documentId={doc.document_id}
             field="audio_backing"
@@ -162,7 +169,26 @@ export default function SongDetailPage() {
               )}
             </div>
           </div>
-          <NoteViews events={song.melody.events} stepping currentMs={playheadMs} tuning={song.melody.tuning} />
+          <NoteViews
+            events={song.melody.events}
+            stepping
+            currentMs={playheadMs}
+            tuning={song.melody.tuning}
+            renderOverlay={({ xOfMs, height }) =>
+              (song.markers ?? []).map((m) => {
+                const x = xOfMs(m.start_ms)
+                return (
+                  <g key={`${m.label}-${m.start_ms}`}>
+                    {m.end_ms != null && (
+                      <rect x={x} y={0} width={xOfMs(m.end_ms) - x} height={height} fill="#2B579A" opacity={0.06} />
+                    )}
+                    <line x1={x} y1={0} x2={x} y2={height} stroke="#2B579A" strokeDasharray="3 3" opacity={0.6} />
+                    <text x={x + 3} y={10} fontSize={9} fill="#2B579A" opacity={0.9}>{m.label}</text>
+                  </g>
+                )
+              })
+            }
+          />
         </section>
       ) : (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">

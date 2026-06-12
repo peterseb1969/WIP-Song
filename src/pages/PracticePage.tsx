@@ -125,6 +125,21 @@ export default function PracticePage() {
   /** Offset of the active range within the exercise timeline (for backing audio). */
   const activeOffsetMs = loopActive && targets[loopFrom] ? targets[loopFrom]!.start_ms : 0
 
+  // Song markers with a range that covers notes of this exercise become
+  // one-click loop presets (marker times are song-timeline; targets are
+  // re-based by sectionStart).
+  const loopPresets = (song?.markers ?? [])
+    .filter((m) => m.end_ms != null)
+    .map((m) => {
+      const from = targets.findIndex((e) => e.start_ms >= m.start_ms - sectionStart)
+      let to = -1
+      for (let i = targets.length - 1; i >= 0; i--) {
+        if (targets[i]!.start_ms < m.end_ms! - sectionStart) { to = i; break }
+      }
+      return { label: m.label, from, to }
+    })
+    .filter((p) => p.from >= 0 && p.to >= p.from)
+
   const totalMs = activeTargets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
 
   // Backing-track slice playback for song sections with audio.
@@ -432,6 +447,22 @@ export default function PracticePage() {
               / {targets.length}
             </span>
           )}
+          {loopPresets.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => setLoop({ from: p.from, to: p.to })}
+              disabled={phase !== 'idle' && phase !== 'done'}
+              title={`Loop "${p.label}" (notes ${p.from + 1}–${p.to + 1})`}
+              className={`rounded px-2 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 ${
+                loopActive && loopFrom === p.from && loopTo === p.to
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-text-muted hover:bg-primary/5'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
         <button
           type="button"

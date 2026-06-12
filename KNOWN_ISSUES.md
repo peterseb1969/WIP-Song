@@ -69,9 +69,13 @@ added 2026-06-12).
   repeated listen (synth + backing slice), range-scoped scoring, lesson
   progress deliberately not counted on loop takes. Time-range/marker-anchored
   loops arrive with markers.
-- **Markers** — named positions in a song (verse, chorus, "the hard bit") to
-  jump to and to anchor loops/exercises. Likely a data-model addition
-  (markers on SONG_TRACK) → Rule 6: through Phase 2/3 first.
+- ~~Markers~~ **DONE 2026-06-12** (through Phase 2/3: SONG_TRACK v2 adds
+  `markers` array, v1 deactivated, seeds exported): marker editor on the
+  song page (add at playhead / by time, delete), marker lines+ranges drawn
+  on the piano roll, range markers appear as one-click **loop presets** on
+  the practice page. v1-pinned docs migrate transparently on first marker
+  save; re-imports preserve markers (merge-over-existing). Deferred:
+  jump-to-marker playback, marker rename (delete+add for now).
 - ~~Background tracks~~ **DONE 2026-06-12**: upload/replace UI for
   audio_backing and audio_full on the song page (`AudioTrackUpload.tsx`);
   real MIME enforced (extension fallback map — octet-stream would be
@@ -80,6 +84,9 @@ added 2026-06-12).
   for low voices).
 
 ## Backlog from Peter (2026-06-12)
+
+- **Zoom in/out** — zoom the note views (piano roll / fretboard timeline) in
+  and out; long songs are cramped at the fixed px-per-second scale.
 
 - ~~Guitar Pro import~~ **GP3/4/5 DONE 2026-06-12** (`server/lib/gp.ts`,
   12 tests against the four-sample corpus; exact string+fret+tuning stored

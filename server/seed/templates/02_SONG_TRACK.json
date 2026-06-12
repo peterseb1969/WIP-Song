@@ -114,7 +114,17 @@
       "label": "Canonical Melody",
       "type": "object",
       "metadata": {
-        "note": "Canonical note events: {tempo_bpm?, events: [{midi, start_ms, duration_ms, syllable?}]}"
+        "note": "Canonical note events: {tempo_bpm?, tuning?, events: [{midi, start_ms, duration_ms, syllable?, string?, fret?}]}"
+      }
+    },
+    {
+      "name": "markers",
+      "label": "Markers",
+      "type": "array",
+      "array_item_type": "object",
+      "mandatory": false,
+      "metadata": {
+        "note": "Named positions/ranges in the song timeline: {label, start_ms, end_ms?}. User-authored (PATCH-edited) — re-import flows must carry existing markers forward."
       }
     }
   ],

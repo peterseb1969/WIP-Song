@@ -6,6 +6,13 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- Markers (SONG_TRACK v2): name positions/ranges in a song ("Chorus",
+  "the hard bit") on the song page; they draw on the piano roll and ranged
+  markers become one-click loop presets on the practice page. Existing
+  documents migrate to template v2 transparently on first marker save;
+  re-imports now merge over existing songs so markers/audio/metadata edits
+  survive. Fix: document PATCHes apply at the data level (the audio-upload
+  PATCH was wrapped in {data:…} and would have failed).
 - Loops: practice a note range on repeat. Toggle Loop on the practice page,
   pick the range (notes m–n); Listen repeats it (synth or backing-track
   slice, at any speed) until stopped, and a sung take is scored against the

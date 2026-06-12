@@ -12,7 +12,7 @@ SONG_MUSICAL_KEY `019eb813-bc98…`, SONG_GENRE `019eb813-bcb0…`,
 SONG_LANGUAGE `019eb813-bccb…`, SONG_PROGRESS_STATUS `019eb813-bce3…` (79 terms total).
 
 Template IDs (all v1 active unless noted): SONG_SINGER `019eb816-0708…`,
-SONG_TRACK `019eb816-072b…`, SONG_EXERCISE `019eb816-35e1…`,
+SONG_TRACK `019eb816-072b…` (v2), SONG_EXERCISE `019eb816-35e1…`,
 SONG_LESSON `019eb816-58b6…`, **SONG_ATTEMPT `019eb816-8df8…` — v3 active,
 v1/v2 deactivated** (v2 was the CASE-448 workaround; see deviation below),
 SONG_PROGRESS `019eb816-9e89…`, BOOTSTRAP_RECORD `019eb816-ac8a…`.
@@ -114,11 +114,21 @@ identity_fields: `[subject]` — one doc per user; profile edits = new versions.
 | audio_full | file (audio/*) | no | full mix |
 | audio_backing | file (audio/*) | no | instrumental / karaoke track |
 | melody | object | no | canonical note events (see convention above) |
+| markers | array (object items) | no | **v2 (2026-06-12)**: named positions/ranges `{label, start_ms, end_ms?}` — user-authored, PATCH-edited |
 
 identity_fields: `[title, artist]` — re-import of the same song updates it
 (new version) instead of duplicating. External catalog IDs (UltraStar DB id,
 etc.) registered as **Registry synonyms** on the document at import time.
 Reporting config: exclude `melody` from flattening (large object).
+
+**SONG_TRACK is at v2** (markers added 2026-06-12; v1 deactivated per
+PoNIF #2). Two operational facts, verified live: (1) PATCH validates against
+the template version recorded on the document, so v1-pinned docs reject
+`markers` — the marker editor migrates them with one full upsert onto v2
+(same identity, same document_id, new doc version). (2) Re-import is a full
+upsert and would wipe user-authored fields — the import dialog merges over
+the existing document's data so markers, uploaded audio, and metadata edits
+survive.
 
 ### SONG_EXERCISE — a drill or song-section task
 | Field | Type | Mandatory | Notes |
