@@ -27,13 +27,20 @@ format 1, 14 tracks, 192 tpqn): no lyrics at all; two vocal candidates
 ("Lead Vox", "Lead Vox 2"); all track labels as 0x01 text events; vocals
 enter at ~52 s.
 
-## MIDI karaoke (.kar) — implemented (same parser), unverified
+## MIDI karaoke (.kar) — implemented (same parser), verified synthetically
 
 Same SMF structure; syllables conventionally arrive as text events (0x01)
 rather than lyric meta. Heuristic: a track with >20 text events is treated as
-a lyric track; `@`-prefixed directives (`@T` title, `@I` info…) are skipped.
-**No .kar sample tested yet — verify with a real file before trusting the
-syllable alignment.**
+a lyric track; `@`-prefixed directives (`@T` title, `@I` info…) are skipped;
+`/` (line) and `\` (verse) prefixes are stripped from per-note syllables and
+become line breaks in `lyrics_text`.
+
+Verified against a byte-exact synthetic Soft-Karaoke file
+(`tests/unit/kar.test.ts`): cross-track attachment (Words track ↔ separate
+melody track), marker stripping, directive exclusion, the >20-event gate
+(sparse text annotations are not mistaken for lyrics), and 0x05-lyric
+precedence. A real-world .kar exercise is still welcome — wild files carry
+encoding quirks no synthetic covers.
 
 ## Planned, not implemented
 

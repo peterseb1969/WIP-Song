@@ -6,6 +6,9 @@
   no audio) with a moving playhead; skips leading silence.
 - Practice: live tuner readout while recording (note name, cents, Hz).
 - Fix: browser file uploads now pass the required namespace form field.
+- .kar syllable handling verified via a synthetic Soft-Karaoke test file
+  (7 new tests): cross-track syllable attachment, line-marker stripping,
+  @-directive exclusion, lyric-track gate, 0x05 precedence.
 - Deployment verified (2026-06-12): `check-app-deployability` 7/7; included
   in a wip-deploy dev install via `--app-source` (container healthy, live at
   `/apps/song/`); manifest committed in World-in-a-Pie. Production image

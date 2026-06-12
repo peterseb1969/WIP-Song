@@ -11,8 +11,10 @@ added 2026-06-12).
   register plausibly (G2/A♭2), scoring behaved as designed (octave rule),
   attempts + audio/webm recordings persisted. Surfaced one bug (uploadFile
   needed the namespace arg — fixed in 78a7176).
-- **.kar syllable alignment is heuristic-only** — no .kar sample file has
-  been parsed yet (IMPORT_FORMATS.md).
+- ~~.kar syllable alignment is heuristic-only~~ **VERIFIED 2026-06-12**
+  against a synthetic Soft-Karaoke file (`tests/unit/kar.test.ts`) — all
+  heuristics behave as designed. A real-world .kar would still add value
+  (encoding quirks), but the logic is no longer untested.
 - ~~`wip-deploy install --app-source` acceptance run not yet executed~~
   **VERIFIED 2026-06-12**: `check-app-deployability` passed 7/7 and a full
   dev reinstall included `--app-source song=~/Development/WIP-Song`;
