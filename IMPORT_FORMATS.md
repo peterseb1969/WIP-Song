@@ -51,9 +51,14 @@ encoding quirks no synthetic covers.
   container formats (.gpx is a proprietary "BCFZ" archive; .gp since GP7 is
   a zip holding `Content/score.gpif` XML). Notes carry string+fret — exact
   fretboard positions for the fretboard view, no position inference needed —
-  plus rhythm, tempo map, and per-track tuning. Likely first cut: .gp
-  (zip+XML, no dependency) and/or .gp5; multi-track import (2026-06-12)
-  already gives each track a home.
+  plus rhythm, tempo map, and per-track tuning. Likely first cut: the
+  classic binary family and/or GP7 zip+XML (both dependency-free); .gpx
+  (BCFZ) last. Multi-track import (2026-06-12) already gives each track a
+  home. **Samples on hand** (`test-data/`, verified magic bytes): GP3 v3.00
+  (Pushed Again), GP4 v4.0 (sweet-ballroom-blitz), GP5 v5.0 (Liebeslied),
+  GP5 v5.1 (Nena — v5.1 deviates from v5.0, both needed), GPX/BCFZ (EASY
+  RIFFS), GP7+ zip (TheManWhoSoldTheWorld, `Content/score.gpif` is 110 KB
+  of plain XML).
 - **UltraStar (.txt)** — `: start dur pitch syllable` lines; pitches relative
   to a `#GAP`/`#BPM` header. Candidate for the next import iteration.
 - **LRC (.lrc)** — lyrics+timing only (no pitch); would attach syllables to an
