@@ -11,6 +11,11 @@ COPY . .
 # Deploy path prefix baked into the static bundle (wip-deployable contract).
 ARG VITE_BASE_PATH=/
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
+# Build stamp (CASE-472) — baked from CI --build-arg; 'dev' default hides it.
+ARG VITE_BUILD_STAMP=dev
+ARG VITE_BUILD_SHA=dev
+ENV VITE_BUILD_STAMP=${VITE_BUILD_STAMP}
+ENV VITE_BUILD_SHA=${VITE_BUILD_SHA}
 RUN npm run build          # vite build → /app/dist
 
 FROM node:22-slim AS runtime

@@ -56,7 +56,11 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <WipFooter appName="WIP-Song" />
+      <WipFooter
+        appName="WIP-Song"
+        buildStamp={import.meta.env.VITE_BUILD_STAMP}
+        buildSha={import.meta.env.VITE_BUILD_SHA}
+      />
       <AskBar />
     </div>
   )
