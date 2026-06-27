@@ -17,6 +17,18 @@
       "sort_order": 2
     },
     {
+      "value": "GUITAR_PRO",
+      "label": "Guitar Pro (.gp3/.gp4/.gp5)",
+      "aliases": [
+        "gp",
+        "gp3",
+        "gp4",
+        "gp5",
+        "guitar pro"
+      ],
+      "sort_order": 10
+    },
+    {
       "value": "ULTRASTAR_TXT",
       "label": "UltraStar (.txt)",
       "aliases": [

@@ -1,0 +1,38 @@
+{
+  "value": "SONG_LESSON_EXERCISE",
+  "label": "Lesson → Exercise",
+  "description": "Edge: a lesson contains an exercise at an ordered position. source_ref = SONG_LESSON, target_ref = SONG_EXERCISE. The lesson's curriculum is the set of these edges ordered by `sequence`.",
+  "usage": "relationship",
+  "versioned": false,
+  "identity_fields": ["source_ref", "target_ref"],
+  "source_templates": ["SONG_LESSON"],
+  "target_templates": ["SONG_EXERCISE"],
+  "fields": [
+    {
+      "name": "source_ref",
+      "label": "Lesson",
+      "type": "reference",
+      "mandatory": true,
+      "reference_type": "document",
+      "target_templates": ["SONG_LESSON"]
+    },
+    {
+      "name": "target_ref",
+      "label": "Exercise",
+      "type": "reference",
+      "mandatory": true,
+      "reference_type": "document",
+      "target_templates": ["SONG_EXERCISE"]
+    },
+    {
+      "name": "sequence",
+      "label": "Position",
+      "type": "number",
+      "mandatory": true
+    }
+  ],
+  "metadata": {
+    "domain": "music-education",
+    "category": "relationship"
+  }
+}
