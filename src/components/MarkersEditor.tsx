@@ -46,10 +46,11 @@ export function useSaveMarkers({ documentId, templateVersion, song }: MarkerSave
       if (templateVersion >= 2) {
         await updateDoc.mutateAsync({ documentId, patch: { markers: next } })
       } else {
-        // v1-pinned doc: full upsert migrates it onto v2 (same identity).
+        // Full upsert against the latest template version (same identity).
+        // No pinned version: a clean bootstrap starts SONG_TRACK at v1 (which
+        // already carries `markers`), so hardcoding a version strands writes.
         await createDoc.mutateAsync({
           template_id: 'SONG_TRACK',
-          template_version: 2,
           namespace: WIP_NAMESPACE,
           data: { ...song, markers: next } as unknown as Record<string, unknown>,
           created_by: 'wip-song-app',

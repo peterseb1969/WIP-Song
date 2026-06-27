@@ -46,6 +46,23 @@ export async function wipPut(path: string, body: unknown): Promise<unknown> {
   return parseOrThrow(res, `PUT ${path}`)
 }
 
+/**
+ * POST returning only the HTTP status, never throwing — for permission
+ * probes where we care about 403-vs-not, not the body. Returns 0 on a
+ * network error so callers can distinguish "couldn't reach" from a real
+ * verdict and avoid false-blocking.
+ */
+export async function wipPostStatus(path: string, body: unknown): Promise<number> {
+  try {
+    const res = await fetch(`${WIP_BASE_URL}${path}`, {
+      method: 'POST', headers: headers(), body: JSON.stringify(body),
+    })
+    return res.status
+  } catch {
+    return 0
+  }
+}
+
 export async function wipPatch(path: string, body: unknown): Promise<unknown> {
   const res = await fetch(`${WIP_BASE_URL}${path}`, {
     method: 'PATCH', headers: headers(), body: JSON.stringify(body),

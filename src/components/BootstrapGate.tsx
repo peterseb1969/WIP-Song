@@ -24,14 +24,14 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Database, AlertTriangle, RefreshCw, Loader2, ServerCrash } from 'lucide-react'
+import { Database, AlertTriangle, RefreshCw, Loader2, ServerCrash, Lock } from 'lucide-react'
 import { serverApiUrl } from '../lib/config'
 
 const NAMESPACE_LABEL = 'dev-wip-song'
 
 const APP_TITLE = 'WIP-Song'
 
-type AppStatus = 'checking' | 'wip_unreachable' | 'needs_bootstrap' | 'bootstrapping' | 'ready' | 'error'
+type AppStatus = 'checking' | 'wip_unreachable' | 'needs_bootstrap' | 'not_writable' | 'bootstrapping' | 'ready' | 'error'
 
 interface BootstrapProgress {
   step: string
@@ -174,6 +174,41 @@ export function BootstrapGate({ children }: { children: React.ReactNode }) {
             <p className="text-xs text-gray-400 text-center">
               If restoring from backup, do so now and then click "Check Again".
             </p>
+          </div>
+        )}
+
+        {status === 'not_writable' && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4">
+              <Lock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <p className="font-medium text-amber-800">Namespace not writable</p>
+                <p className="mt-1 text-sm text-amber-600">
+                  The <code className="rounded bg-amber-100 px-1">{NAMESPACE_LABEL}</code> namespace
+                  exists, but this app's runtime key can only read it — it has no write grant.
+                  This is the expected state after a namespace is deleted &amp; recreated: the grant
+                  is dropped, and a scoped key can't restore it itself.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-md bg-gray-50 p-3 text-xs text-gray-600">
+              <p className="font-medium text-gray-500">An admin must grant write access, e.g.:</p>
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-all text-[11px] leading-relaxed text-gray-700">{`create_grant(
+  namespace="${NAMESPACE_LABEL}",
+  subject="<runtime-key-name>",   # this app: wip-song-dev-r2
+  subject_type="api_key",
+  permission="write",
+)`}</pre>
+              <p className="mt-1 text-gray-400">
+                (or <code className="rounded bg-gray-100 px-1">POST /api/registry/namespaces/{NAMESPACE_LABEL}/grants</code>)
+              </p>
+            </div>
+            <button
+              onClick={checkStatus}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-gray-100 px-4 py-2 text-sm font-medium hover:bg-gray-200"
+            >
+              <RefreshCw className="h-4 w-4" /> Check Again
+            </button>
           </div>
         )}
 

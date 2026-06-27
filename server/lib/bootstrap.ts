@@ -47,7 +47,7 @@
  *     ships these in server/lib/wip-api.ts; the same shape is expected.
  */
 
-import { wipGet, wipPost, wipPut, NAMESPACE } from './wip-api.js'
+import { wipGet, wipPost, wipPut, wipPostStatus, NAMESPACE } from './wip-api.js'
 import { readFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -98,7 +98,12 @@ function assertBulkSuccess(response: unknown, context: string): void {
   }
 }
 
-export type BootstrapStatus = 'unknown' | 'wip_unreachable' | 'needs_bootstrap' | 'ready'
+export type BootstrapStatus =
+  | 'unknown'
+  | 'wip_unreachable'
+  | 'needs_bootstrap'
+  | 'not_writable'
+  | 'ready'
 
 export interface BootstrapProgress {
   step: string
@@ -125,7 +130,42 @@ export async function checkStatus(): Promise<BootstrapStatus> {
     return 'wip_unreachable'
   }
 
-  return namespaces.some((ns) => ns.prefix === NAMESPACE) ? 'ready' : 'needs_bootstrap'
+  if (!namespaces.some((ns) => ns.prefix === NAMESPACE)) return 'needs_bootstrap'
+
+  // Namespace exists — but a namespace-scoped key can READ without being able
+  // to WRITE: deleting + recreating a namespace drops the key's write grant
+  // (CASE-450), and a scoped key cannot re-grant itself (that needs admin).
+  // Probe write access here so the gate surfaces one clear "needs grant"
+  // message instead of letting it manifest downstream as cryptic per-write
+  // failures ("template not found" / a silent blank screen on save).
+  return (await isNamespaceWritable()) ? 'ready' : 'not_writable'
+}
+
+/**
+ * Probe whether the runtime key can WRITE to the namespace. Permission is
+ * enforced at the HTTP layer (403) BEFORE per-item validation, so an
+ * intentionally-invalid create (empty data) persists nothing: HTTP 403 =
+ * not writable, anything else = writable. Resolves any template in the
+ * namespace to probe against; if it can't probe (no templates, network
+ * blip) it returns true rather than false-blocking the app.
+ */
+async function isNamespaceWritable(): Promise<boolean> {
+  let templateId: string | undefined
+  try {
+    const list = (await wipGet(
+      `/api/template-store/templates?namespace=${NAMESPACE}`,
+    )) as { items?: Array<{ template_id: string }> }
+    templateId = list.items?.[0]?.template_id
+  } catch {
+    return true
+  }
+  if (!templateId) return true
+
+  const status = await wipPostStatus('/api/document-store/documents', [
+    { template_id: templateId, namespace: NAMESPACE, data: {} },
+  ])
+  if (status === 0) return true // couldn't reach — not a permission verdict
+  return status !== 403
 }
 
 /**
