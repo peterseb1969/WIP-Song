@@ -5,6 +5,7 @@ import { useSinger, type SingerData } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
 import { midiToNoteName } from '../lib/music'
 import { OCTAVE_TOLERANCE_OPTIONS, DEFAULT_OCTAVE_TOLERANCE } from '../lib/scoring'
+import { COUNT_IN_OPTIONS, DEFAULT_COUNT_IN } from '../lib/audio'
 
 const NOTE_VIEWS = [
   { value: 'piano', label: 'Piano roll' },
@@ -168,6 +169,34 @@ export default function ProfilePage() {
           </div>
           <p className="mt-1 text-sm text-text-muted">
             Sing comfortably in another octave and still score full credit — e.g. sing C3 for a written C4.
+          </p>
+        </div>
+
+        <div>
+          <span className="text-xs font-medium uppercase tracking-wide text-text-muted">Count-in</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {COUNT_IN_OPTIONS.map(({ value, label }) => {
+              const current = form.preferences?.count_in ?? DEFAULT_COUNT_IN
+              const isSelected = current === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => set('preferences', { ...form.preferences, count_in: value })}
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                    isSelected
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-gray-200 bg-surface text-text-muted hover:bg-gray-50'
+                  }`}
+                >
+                  {isSelected && <Check className="h-3 w-3" />}
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-1 text-sm text-text-muted">
+            Metronome clicks at the song tempo before recording starts, so you can come in on the beat.
           </p>
         </div>
 

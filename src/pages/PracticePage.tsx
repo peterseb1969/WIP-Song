@@ -6,7 +6,7 @@ import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import { useSinger } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
-import { startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
+import { startRecording, playCountIn, COUNT_IN_OPTIONS, DEFAULT_COUNT_IN, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores, OCTAVE_TOLERANCE_OPTIONS, DEFAULT_OCTAVE_TOLERANCE } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
 import { useLessonExercises } from '../lib/useLessonExercises'
@@ -16,7 +16,7 @@ import { midiToNoteName, midiToFrequency, type NoteEvent } from '../lib/music'
 import { BASE } from '../lib/config'
 import type { ExerciseData, LessonData, SongData } from '../lib/types'
 
-type Phase = 'idle' | 'listening' | 'paused' | 'recording' | 'saving' | 'done'
+type Phase = 'idle' | 'listening' | 'paused' | 'counting' | 'recording' | 'saving' | 'done'
 
 /** Live tuner readout while recording: note name, cents deviation, Hz. */
 function Tuner({ sample }: { sample: PitchSample | null }) {
@@ -116,6 +116,12 @@ export default function PracticePage() {
   const [octaveTolOverride, setOctaveTolOverride] = useState<number | null>(null)
   const octaveTolerance =
     octaveTolOverride ?? singerData?.preferences?.octave_tolerance ?? DEFAULT_OCTAVE_TOLERANCE
+  // Metronome count-in before recording: per-session override (null = Profile
+  // default). `countdown` shows the current beat number during count-in.
+  const [countInOverride, setCountInOverride] = useState<number | null>(null)
+  const countIn = countInOverride ?? singerData?.preferences?.count_in ?? DEFAULT_COUNT_IN
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const countInCancelRef = useRef<(() => void) | null>(null)
   // Speed the current/last take was sung at — keeps the trace overlay and
   // scoring consistent even if the picker changes after recording.
   const takeSpeedRef = useRef(1)
@@ -165,6 +171,7 @@ export default function PracticePage() {
     .filter((p) => p.from >= 0 && p.to >= p.from)
 
   const totalMs = activeTargets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
+  const tempoBpm = exercise?.target_notes?.tempo_bpm ?? song?.melody?.tempo_bpm ?? song?.tempo_bpm ?? 120
 
   // Pausable synth playback for Listen (non-backing). On natural end, re-play
   // if looping, else return to idle. synthRef lets onDone re-trigger play().
@@ -209,6 +216,7 @@ export default function PracticePage() {
   useEffect(
     () => () => {
       stopListenRef.current?.()
+      countInCancelRef.current?.()
       sessionRef.current?.cancel()
       backingRef.current?.pause()
       if (autoStopRef.current) window.clearTimeout(autoStopRef.current)
@@ -330,12 +338,7 @@ export default function PracticePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- codeOfRef is rebuilt per render from the catalog query
   }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson, exerciseIds, octaveTolerance])
 
-  const handleRecord = async () => {
-    stopListenRef.current?.()
-    traceRef.current = []
-    setScores(null)
-    setRecordMs(0)
-    takeSpeedRef.current = speed
+  const startRecordingNow = async () => {
     try {
       const session = await startRecording((s) => {
         traceRef.current.push(s)
@@ -361,6 +364,35 @@ export default function PracticePage() {
       setSaveError(hint)
       setPhase('idle')
     }
+  }
+
+  const handleRecord = async () => {
+    // Clicking during the count-in cancels it.
+    if (phase === 'counting') {
+      countInCancelRef.current?.()
+      countInCancelRef.current = null
+      setCountdown(null)
+      setPhase('idle')
+      return
+    }
+    stopListenRef.current?.()
+    synth.stop()
+    traceRef.current = []
+    setScores(null)
+    setRecordMs(0)
+    takeSpeedRef.current = speed
+    if (countIn > 0) {
+      // Metronome lead-in at the (speed-adjusted) song tempo, then record on the downbeat.
+      setPhase('counting')
+      const beatMs = 60000 / tempoBpm / speed
+      countInCancelRef.current = playCountIn(countIn, beatMs, setCountdown, () => {
+        countInCancelRef.current = null
+        setCountdown(null)
+        void startRecordingNow()
+      })
+      return
+    }
+    await startRecordingNow()
   }
 
   const reset = useCallback(() => {
@@ -451,7 +483,7 @@ export default function PracticePage() {
         <SpeedControl
           value={speed}
           onChange={setSpeed}
-          disabled={phase === 'listening' || phase === 'paused' || phase === 'recording' || phase === 'saving'}
+          disabled={phase === 'listening' || phase === 'paused' || phase === 'counting' || phase === 'recording' || phase === 'saving'}
         />
 
         <label className="flex items-center gap-1.5 text-xs font-medium text-text-muted" title="How forgiving scoring is when you sing in another octave (default from your Profile)">
@@ -459,10 +491,24 @@ export default function PracticePage() {
           <select
             value={octaveTolerance}
             onChange={(e) => setOctaveTolOverride(Number(e.target.value))}
-            disabled={phase === 'recording' || phase === 'saving'}
+            disabled={phase === 'counting' || phase === 'recording' || phase === 'saving'}
             className="rounded-md border border-gray-200 bg-surface px-2 py-1 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {OCTAVE_TOLERANCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5 text-xs font-medium text-text-muted" title="Metronome count-in before recording (default from your Profile)">
+          Count-in
+          <select
+            value={countIn}
+            onChange={(e) => setCountInOverride(Number(e.target.value))}
+            disabled={phase === 'counting' || phase === 'recording' || phase === 'saving'}
+            className="rounded-md border border-gray-200 bg-surface px-2 py-1 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {COUNT_IN_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
@@ -597,14 +643,23 @@ export default function PracticePage() {
           <button
             type="button"
             onClick={handleListen}
-            disabled={phase === 'recording' || phase === 'saving'}
+            disabled={phase === 'recording' || phase === 'saving' || phase === 'counting'}
             className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-4 w-4" /> {loopActive ? 'Listen (loop)' : 'Listen'}
           </button>
         )}
 
-        {phase !== 'recording' ? (
+        {phase === 'counting' ? (
+          <button
+            type="button"
+            onClick={() => void handleRecord()}
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white tabular-nums hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/40"
+            title="Click to cancel the count-in"
+          >
+            <Mic className="h-4 w-4" /> Count-in {countdown ?? '…'}
+          </button>
+        ) : phase !== 'recording' ? (
           <button
             type="button"
             onClick={() => void handleRecord()}

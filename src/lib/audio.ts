@@ -54,6 +54,56 @@ export function playNotes(events: NoteEvent[], onDone?: () => void, rate = 1): (
   }
 }
 
+/** Count-in options (beats) for the practice metronome lead-in. */
+export const COUNT_IN_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
+  { value: 0, label: 'Off' },
+  { value: 1, label: '1 beat' },
+  { value: 2, label: '2 beats' },
+  { value: 3, label: '3 beats' },
+  { value: 4, label: '4 beats' },
+]
+export const DEFAULT_COUNT_IN = 2
+
+/** A short percussive metronome click; the first beat is accented. */
+function scheduleClick(ac: AudioContext, at: number, accent: boolean) {
+  const osc = ac.createOscillator()
+  osc.type = 'square'
+  osc.frequency.value = accent ? 1500 : 1000
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0, at)
+  gain.gain.linearRampToValueAtTime(accent ? 0.4 : 0.26, at + 0.005)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.06)
+  osc.connect(gain).connect(ac.destination)
+  osc.start(at)
+  osc.stop(at + 0.08)
+}
+
+/**
+ * Metronome count-in: `beats` clicks `beatMs` apart, then onDone fires on the
+ * downbeat (one beat after the last click) — that's where the singer enters.
+ * onBeat(n) reports the countdown number (beats..1) for a visual. Returns a
+ * cancel function that silences pending visuals/onDone (scheduled clicks that
+ * already fired in the audio graph are harmless).
+ */
+export function playCountIn(
+  beats: number,
+  beatMs: number,
+  onBeat: (n: number) => void,
+  onDone: () => void,
+): () => void {
+  const ac = audioContext()
+  const lead = 0.06
+  const t0 = ac.currentTime + lead
+  for (let i = 0; i < beats; i++) scheduleClick(ac, t0 + (i * beatMs) / 1000, i === 0)
+  const timers = [
+    ...Array.from({ length: beats }, (_, i) =>
+      window.setTimeout(() => onBeat(beats - i), (lead * 1000) + i * beatMs),
+    ),
+    window.setTimeout(onDone, (lead * 1000) + beats * beatMs),
+  ]
+  return () => timers.forEach((t) => window.clearTimeout(t))
+}
+
 export interface PitchSample {
   /** ms since recording start */
   t_ms: number

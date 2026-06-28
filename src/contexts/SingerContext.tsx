@@ -33,6 +33,8 @@ export interface SingerData {
     note_view?: 'piano' | 'fretboard' | 'both'
     /** Octaves of displacement that still score full credit (see scoring.ts). */
     octave_tolerance?: number
+    /** Metronome count-in beats before recording starts (practice page). */
+    count_in?: number
   } & Record<string, unknown>
 }
 
