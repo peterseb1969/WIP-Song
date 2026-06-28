@@ -29,7 +29,11 @@ export interface SingerData {
   voice_type?: string
   range_low_midi?: number
   range_high_midi?: number
-  preferences?: { note_view?: 'piano' | 'fretboard' | 'both' } & Record<string, unknown>
+  preferences?: {
+    note_view?: 'piano' | 'fretboard' | 'both'
+    /** Octaves of displacement that still score full credit (see scoring.ts). */
+    octave_tolerance?: number
+  } & Record<string, unknown>
 }
 
 interface SingerContextValue {

@@ -7,7 +7,7 @@ import SpeedControl from '../components/SpeedControl'
 import { useSinger } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
 import { startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
-import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
+import { scoreAttempt, traceToEvents, type AttemptScores, OCTAVE_TOLERANCE_OPTIONS, DEFAULT_OCTAVE_TOLERANCE } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
 import { useLessonExercises } from '../lib/useLessonExercises'
 import { useMelodyPlayer } from '../lib/useMelodyPlayer'
@@ -110,6 +110,12 @@ export default function PracticePage() {
   const [scores, setScores] = useState<AttemptScores | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [speed, setSpeed] = useState(1)
+  // Octave tolerance for scoring: per-session override (null = use the singer's
+  // Profile default). See scoring.ts — singing the right note an octave off can
+  // still earn full credit.
+  const [octaveTolOverride, setOctaveTolOverride] = useState<number | null>(null)
+  const octaveTolerance =
+    octaveTolOverride ?? singerData?.preferences?.octave_tolerance ?? DEFAULT_OCTAVE_TOLERANCE
   // Speed the current/last take was sung at — keeps the trace overlay and
   // scoring consistent even if the picker changes after recording.
   const takeSpeedRef = useRef(1)
@@ -268,7 +274,7 @@ export default function PracticePage() {
     const takeSpeed = takeSpeedRef.current
     const scoringSamples =
       takeSpeed === 1 ? samples : samples.map((s) => ({ ...s, t_ms: Math.round(s.t_ms * takeSpeed) }))
-    const result = scoreAttempt(activeTargets, scoringSamples)
+    const result = scoreAttempt(activeTargets, scoringSamples, octaveTolerance)
     setScores(result)
     setPhase('saving')
     setSaveError(null)
@@ -322,7 +328,7 @@ export default function PracticePage() {
       stoppingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- codeOfRef is rebuilt per render from the catalog query
-  }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson, exerciseIds])
+  }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson, exerciseIds, octaveTolerance])
 
   const handleRecord = async () => {
     stopListenRef.current?.()
@@ -447,6 +453,20 @@ export default function PracticePage() {
           onChange={setSpeed}
           disabled={phase === 'listening' || phase === 'paused' || phase === 'recording' || phase === 'saving'}
         />
+
+        <label className="flex items-center gap-1.5 text-xs font-medium text-text-muted" title="How forgiving scoring is when you sing in another octave (default from your Profile)">
+          Octave
+          <select
+            value={octaveTolerance}
+            onChange={(e) => setOctaveTolOverride(Number(e.target.value))}
+            disabled={phase === 'recording' || phase === 'saving'}
+            className="rounded-md border border-gray-200 bg-surface px-2 py-1 text-xs text-text focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {OCTAVE_TOLERANCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </label>
 
         <div className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-surface p-0.5">
           <button

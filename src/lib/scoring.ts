@@ -29,7 +29,24 @@ function creditForError(errSemitones: number): number {
   return 1 - (errSemitones - 0.5)
 }
 
-export function scoreAttempt(targets: NoteEvent[], samples: PitchSample[]): AttemptScores {
+/**
+ * How many octaves of displacement still earn FULL credit (a guitarist often
+ * sings the melody an octave away from where it's written). 0 = exact octave
+ * required; 1 = ±1 octave; large value = any octave. Adjustable per singer and
+ * per practice session.
+ */
+export const OCTAVE_TOLERANCE_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
+  { value: 0, label: 'Off (exact octave)' },
+  { value: 1, label: '±1 octave' },
+  { value: 99, label: 'Any octave' },
+]
+export const DEFAULT_OCTAVE_TOLERANCE = 1
+
+export function scoreAttempt(
+  targets: NoteEvent[],
+  samples: PitchSample[],
+  octaveTolerance: number = DEFAULT_OCTAVE_TOLERANCE,
+): AttemptScores {
   const notes = targets.map((target) => {
     const within = samples.filter(
       (s) => s.t_ms >= target.start_ms && s.t_ms < target.start_ms + target.duration_ms,
@@ -38,10 +55,18 @@ export function scoreAttempt(targets: NoteEvent[], samples: PitchSample[]): Atte
 
     let pitchCredit = 0
     if (med != null) {
-      const err = Math.abs(med - target.midi)
-      // Octave equivalence: right pitch class an octave off → half credit.
-      const octaveErr = Math.abs(((err + 6) % 12) - 6)
-      pitchCredit = Math.max(creditForError(err), 0.5 * creditForError(octaveErr))
+      const signedErr = med - target.midi
+      const exactCredit = creditForError(Math.abs(signedErr))
+      // Octave equivalence: snap to the nearest octave and score the residual.
+      // A displacement within the allowed tolerance earns full credit; beyond
+      // it, only the raw (exact-octave) credit counts — so a full octave off
+      // with tolerance 0 scores ~0.
+      const octavesOff = Math.round(signedErr / 12)
+      const residual = Math.abs(signedErr - 12 * octavesOff)
+      pitchCredit =
+        octavesOff !== 0 && Math.abs(octavesOff) <= octaveTolerance
+          ? Math.max(exactCredit, creditForError(residual))
+          : exactCredit
     }
 
     // Rhythm proxy: how much of the note window was voiced (~30 samples/s).
