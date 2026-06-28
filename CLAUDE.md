@@ -40,7 +40,7 @@ Your development namespace is `dev-wip-song`. Use it for all data modeling durin
 The MCP server uses a privileged admin key (from WIP's `.env`). This is fine for data modeling via MCP tools.
 
 **For your app's runtime API calls**, use the namespace-scoped key in `.env`.
-No key was auto-provisioned by this script. If WIP is running locally and you have an admin key, create a runtime key via `mcp__wip__create_api_key` (or `POST /api/registry/api-keys`). If a key was already provisioned out-of-band (e.g. for a non-localhost target like `wip-kb.local`), check `.env` and `~/.wip-deploy/<deployment>/secrets/`.
+No key was auto-provisioned by this script. If WIP is running locally and you have an admin key, create a runtime key via `mcp__wip__create_api_key` (or `POST /api/registry/api-keys`). If a key was already provisioned out-of-band (e.g. for a non-localhost target like `kb.internal`), check `.env` and `~/.wip-deploy/<deployment>/secrets/`.
 
 Save the `plaintext_key` from the response to `.env`:
 ```bash
@@ -49,7 +49,7 @@ WIP_API_KEY=<plaintext_key from response>
 
 Because this key is scoped to a single namespace (`dev-wip-song`), WIP derives the namespace automatically when you omit the `namespace` parameter. This means synonym resolution works without passing `namespace` on every API call.
 
-**Grants (CASE-450):** namespace *scoping* gives a key read visibility only — **writes need an explicit namespace grant**. The scaffold provisioned this key with `grant_permission: write`, so it works out of the box. If you ever create a key by hand, pass `grant_permission` on `create_api_key` / `POST /api/registry/api-keys`, or add a grant afterwards (`create_grant` MCP tool, `registry.createGrants` in @wip/client, or `POST /api/registry/namespaces/<ns>/grants`). Grant subject for api keys is the bare key name. This app's dev key is `wip-song-dev-r2` (rotated 2026-06-12 from `wip-song-dev` after a console exposure; write-granted on `dev-wip-song`).
+**Grants (CASE-450):** namespace *scoping* gives a key read visibility only — **writes need an explicit namespace grant**. The scaffold provisioned this key with `grant_permission: write`, so it works out of the box. If you ever create a key by hand, pass `grant_permission` on `create_api_key` / `POST /api/registry/api-keys`, or add a grant afterwards (`create_grant` MCP tool, `registry.createGrants` in @wip/client, or `POST /api/registry/namespaces/<ns>/grants`). Grant subject for api keys is the bare key name. This app's dev key is `wip-song-dev-r2` (rotated 2026-06-12 from `wip-song-dev` after a console exposure; write-granted on `dev-wip-song`). **Grants do NOT survive a namespace delete+recreate** — after rebuilding `dev-wip-song` the key keeps read scope but loses write, and a scoped key cannot self-grant (needs admin). Symptom: writes 403, surfacing in the app as a misleading "template not found" / blank save. Re-grant with the admin key (`create_grant(namespace="dev-wip-song", subject="wip-song-dev-r2", subject_type="api_key", permission="write")`). BootstrapGate now detects this and shows a `not_writable` panel (CASE-493 cleanup, 2026-06-27).
 
 **Key management:** Runtime keys can be listed, updated, and revoked via the Registry API. See WIP's `docs/api-key-management.md` for details.
 
@@ -94,7 +94,7 @@ Otherwise start with:
 - `/wip-wake` — Recover context after compaction or at start of a new session
 - `/wip-report` — Capture fireside chat or trigger session summary
 - `/wip-deploy redeploy|verify` — Redeploy this YAC's own source to the running dev install (or smoke-only). Subset of BE-YAC's `/wip-deploy` — install is BE-YAC's territory (CASE-300)
-- `/wip-case file|list|read|respond|comment|close|implement` — Cross-agent case management. **Filing must allocate via the served allocator** — `bash ~/.cache/wip-kb-client/kb-client.sh case_allocate.py …` (atomic Registry-synonym claim, race-safe; CASE-425/437 — it replaced the FS `case-helper.sh claim` path that CASE-67/301 collisions made mandatory, CASE-306). After writing the body, mirror via `bash ~/.cache/wip-kb-client/kb-client.sh add-to-kb.py yac-discussions/CASE-NN-...md` (CASE-307/440). Single-canonical write; not optional. Runner missing → install one-liner in the case-workflow playbook.
+- `/wip-case file|list|read|respond|comment|close|implement` — Cross-agent case management. **Every case write is ONE gateway call** (CASE-464): `POST <kb_app_url>/apps/kb/server-api/kb/cases[…]` per the served playbook (`~/.cache/wip-kb-client/case-workflow.md`). The server owns allocation (atomic `CASE-<n>` synonym claim — race-safe by construction), the status machine, and edges. Never `Write` a case file with a hand-picked number. Flat case files are optional write-staging; there is no mirror step (the loaders were retired by CASE-464 and refuse with a pointer).
 
 **Context management:** When context reaches ~70-80%, the human should tell you to run `/wip-wake` or save state (DESIGN.md, memory files) before compaction hits.
 
@@ -159,7 +159,7 @@ The WIP libs are tarballs in `libs/`. `@tanstack/react-query` is the peer depend
 
 ## Dev Setup Gotchas
 
-**TLS:** WIP uses a self-signed cert on whichever hostname the install runs at — `https://localhost:8443` for compose dev, `https://<ingress-hostname>` for k8s (e.g. `https://wip-kb.local`). Node.js `fetch()` rejects self-signed certs; add `NODE_TLS_REJECT_UNAUTHORIZED=0` to your `dev:server` script (NOT `start`/production). The python wip_mcp client uses `WIP_VERIFY_TLS=false` (already set in `.mcp.json`). Production with proper certs needs no workaround.
+**TLS:** WIP uses a self-signed cert on whichever hostname the install runs at — `https://localhost:8443` for compose dev, `https://<ingress-hostname>` for k8s (e.g. `https://kb.internal`). Node.js `fetch()` rejects self-signed certs; add `NODE_TLS_REJECT_UNAUTHORIZED=0` to your `dev:server` script (NOT `start`/production). The python wip_mcp client uses `WIP_VERIFY_TLS=false` (already set in `.mcp.json`). Production with proper certs needs no workaround.
 
 **@wip/client baseUrl:** In browser apps behind a Vite proxy, use `baseUrl: '/wip'` (resolved to `window.location.origin + '/wip'`). Do NOT use a bare relative path without the client resolving it — `new URL('/wip/...')` throws without a protocol.
 
@@ -185,7 +185,7 @@ Key commands:
 
 Remote WIP instances:
 ```bash
-wip-toolkit --host wip-kb.local --proxy export kb /tmp/kb-backup.zip
+wip-toolkit --host kb.internal --proxy export kb /tmp/kb-backup.zip
 ```
 
 ## Session Awareness
