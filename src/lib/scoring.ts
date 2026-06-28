@@ -40,7 +40,7 @@ export const OCTAVE_TOLERANCE_OPTIONS: ReadonlyArray<{ value: number; label: str
   { value: 1, label: '±1 octave' },
   { value: 99, label: 'Any octave' },
 ]
-export const DEFAULT_OCTAVE_TOLERANCE = 1
+export const DEFAULT_OCTAVE_TOLERANCE = 0
 
 export function scoreAttempt(
   targets: NoteEvent[],
