@@ -28,3 +28,10 @@ export const WIP_PROXY_BASE = `${BASE}wip`
  * types require it explicitly. Keep in sync with the server's WIP_NAMESPACE.
  */
 export const WIP_NAMESPACE = import.meta.env.VITE_WIP_NAMESPACE || 'dev-wip-song'
+
+/**
+ * Curriculum authoring (create/edit lessons & exercises) is gated so a future
+ * learner-facing build hides it. Off by default; set VITE_AUTHORING_ENABLED=true
+ * (build-time) to expose the Author section in nav + routes.
+ */
+export const AUTHORING_ENABLED = import.meta.env.VITE_AUTHORING_ENABLED === 'true'

@@ -2,12 +2,14 @@ import { NavLink, Link, Outlet } from 'react-router-dom'
 import { Music, User } from 'lucide-react'
 import { WipFooter } from '@wip/react'
 import AskBar from './AskBar'
+import { AUTHORING_ENABLED } from '../lib/config'
 
 const NAV_ITEMS = [
   { to: '/songs', label: 'Songs' },
   { to: '/lessons', label: 'Lessons' },
   { to: '/practice', label: 'Practice' },
   { to: '/progress', label: 'Progress' },
+  ...(AUTHORING_ENABLED ? [{ to: '/author', label: 'Author' }] : []),
 ]
 
 export default function Layout() {

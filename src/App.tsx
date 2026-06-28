@@ -11,6 +11,10 @@ import PracticePage from './pages/PracticePage'
 import LessonsPage from './pages/LessonsPage'
 import LessonDetailPage from './pages/LessonDetailPage'
 import ProgressPage from './pages/ProgressPage'
+import AuthorHubPage from './pages/AuthorHubPage'
+import LessonBuilderPage from './pages/LessonBuilderPage'
+import ExerciseFormPage from './pages/ExerciseFormPage'
+import { AUTHORING_ENABLED } from './lib/config'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
 // Router's <Link>/navigate() drop the deploy prefix and reloads 404 at the
@@ -33,6 +37,14 @@ export default function App() {
             <Route path="/lessons/:id" element={<LessonDetailPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            {AUTHORING_ENABLED && (
+              <>
+                <Route path="/author" element={<AuthorHubPage />} />
+                <Route path="/author/lessons/new" element={<LessonBuilderPage />} />
+                <Route path="/author/lessons/:id" element={<LessonBuilderPage />} />
+                <Route path="/author/exercises/new" element={<ExerciseFormPage />} />
+              </>
+            )}
           </Route>
         </Routes>
         </BrowserRouter>

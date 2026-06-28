@@ -6,6 +6,7 @@ import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import AudioTrackUpload from '../components/AudioTrackUpload'
 import MarkersEditor, { useSaveMarkers } from '../components/MarkersEditor'
+import CreateExerciseFromSection from '../components/CreateExerciseFromSection'
 import { playNotes } from '../lib/audio'
 import type { Marker, SongData } from '../lib/types'
 
@@ -175,6 +176,7 @@ export default function SongDetailPage() {
             fileId={song.audio_full}
             songTitle={song.title}
           />
+          <CreateExerciseFromSection songId={doc.document_id} song={song} />
         </>
       )}
 
