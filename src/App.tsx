@@ -14,7 +14,8 @@ import ProgressPage from './pages/ProgressPage'
 import AuthorHubPage from './pages/AuthorHubPage'
 import LessonBuilderPage from './pages/LessonBuilderPage'
 import ExerciseFormPage from './pages/ExerciseFormPage'
-import { AUTHORING_ENABLED } from './lib/config'
+import SettingsPage from './pages/SettingsPage'
+import { useAuthoringEnabled } from './lib/authoring'
 
 // Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
 // Router's <Link>/navigate() drop the deploy prefix and reloads 404 at the
@@ -22,6 +23,7 @@ import { AUTHORING_ENABLED } from './lib/config'
 const BASENAME = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'
 
 export default function App() {
+  const authoringEnabled = useAuthoringEnabled()
   return (
     <BootstrapGate>
       <SingerProvider>
@@ -37,7 +39,8 @@ export default function App() {
             <Route path="/lessons/:id" element={<LessonDetailPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            {AUTHORING_ENABLED && (
+            <Route path="/settings" element={<SettingsPage />} />
+            {authoringEnabled && (
               <>
                 <Route path="/author" element={<AuthorHubPage />} />
                 <Route path="/author/lessons/new" element={<LessonBuilderPage />} />

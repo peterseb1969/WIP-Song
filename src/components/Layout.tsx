@@ -1,18 +1,21 @@
 import { NavLink, Link, Outlet } from 'react-router-dom'
-import { Music, User } from 'lucide-react'
+import { Music, User, Settings } from 'lucide-react'
 import { WipFooter } from '@wip/react'
 import AskBar from './AskBar'
-import { AUTHORING_ENABLED } from '../lib/config'
+import { useAuthoringEnabled } from '../lib/authoring'
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { to: '/songs', label: 'Songs' },
   { to: '/lessons', label: 'Lessons' },
   { to: '/practice', label: 'Practice' },
   { to: '/progress', label: 'Progress' },
-  ...(AUTHORING_ENABLED ? [{ to: '/author', label: 'Author' }] : []),
 ]
 
 export default function Layout() {
+  const authoringEnabled = useAuthoringEnabled()
+  const navItems = authoringEnabled
+    ? [...BASE_NAV_ITEMS, { to: '/author', label: 'Author' }]
+    : BASE_NAV_ITEMS
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-gray-200 bg-surface">
@@ -23,7 +26,7 @@ export default function Layout() {
               <span className="text-lg font-semibold tracking-tight">WIP-Song</span>
             </Link>
             <nav className="flex items-center gap-1">
-              {NAV_ITEMS.map(({ to, label }) => (
+              {navItems.map(({ to, label }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -40,17 +43,30 @@ export default function Layout() {
               ))}
             </nav>
           </div>
-          <NavLink
-            to="/profile"
-            aria-label="Profile"
-            className={({ isActive }) =>
-              `flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary/40 ${
-                isActive ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-primary/5 hover:text-text'
-              }`
-            }
-          >
-            <User className="h-5 w-5" />
-          </NavLink>
+          <div className="flex items-center gap-1">
+            <NavLink
+              to="/settings"
+              aria-label="Settings"
+              className={({ isActive }) =>
+                `flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                  isActive ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-primary/5 hover:text-text'
+                }`
+              }
+            >
+              <Settings className="h-5 w-5" />
+            </NavLink>
+            <NavLink
+              to="/profile"
+              aria-label="Profile"
+              className={({ isActive }) =>
+                `flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary/40 ${
+                  isActive ? 'bg-primary/10 text-primary' : 'text-text-muted hover:bg-primary/5 hover:text-text'
+                }`
+              }
+            >
+              <User className="h-5 w-5" />
+            </NavLink>
+          </div>
         </div>
       </header>
 

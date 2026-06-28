@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Dumbbell } from 'lucide-react'
-import { AUTHORING_ENABLED } from '../lib/config'
+import { useAuthoringEnabled } from '../lib/authoring'
 import type { SongData } from '../lib/types'
 import type { ExercisePrefill } from '../pages/ExerciseFormPage'
 
@@ -12,7 +12,8 @@ import type { ExercisePrefill } from '../pages/ExerciseFormPage'
  */
 export default function CreateExerciseFromSection({ songId, song }: { songId: string; song: SongData }) {
   const navigate = useNavigate()
-  if (!AUTHORING_ENABLED) return null
+  const authoringEnabled = useAuthoringEnabled()
+  if (!authoringEnabled) return null
 
   const ranges = (song.markers ?? []).filter((m) => m.end_ms != null)
   if (!ranges.length) return null
