@@ -39,13 +39,15 @@ export interface ExerciseData {
   section_end_ms?: number
 }
 
-/** data shape of a SONG_LESSON document. */
+/**
+ * data shape of a SONG_LESSON document. Exercises are NOT stored here —
+ * lesson→exercise is a SONG_LESSON_EXERCISE edge type (see useLessonExercises).
+ */
 export interface LessonData {
   code: string
   title: string
   description?: string
   difficulty?: string
-  exercise_refs: string[]
 }
 
 /** data shape of a SONG_ATTEMPT document. */

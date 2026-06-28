@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQueryDocuments } from '@wip/react'
 import { ListMusic, GraduationCap, TrendingUp, Play } from 'lucide-react'
 import { useSinger } from '../contexts/SingerContext'
+import { useLessonExercises } from '../lib/useLessonExercises'
 import type { LessonData, ProgressData } from '../lib/types'
 
 const SECTIONS = [
@@ -42,6 +43,7 @@ export default function HomePage() {
   const inProgressLesson = lessonRef
     ? (lessonDocs?.items.find((d) => d.document_id === lessonRef)?.data as unknown as LessonData | undefined)
     : undefined
+  const { exerciseIds } = useLessonExercises(lessonRef)
 
   return (
     <div>
@@ -66,7 +68,7 @@ export default function HomePage() {
               {(() => {
                 const p = started.data?.items[0]?.data as unknown as ProgressData | undefined
                 return p
-                  ? ` — ${p.completed_exercise_codes?.length ?? 0}/${inProgressLesson?.exercise_refs.length ?? '?'} exercises, best ${p.best_score ?? '—'}`
+                  ? ` — ${p.completed_exercise_codes?.length ?? 0}/${exerciseIds.length || '?'} exercises, best ${p.best_score ?? '—'}`
                   : ''
               })()}
             </p>

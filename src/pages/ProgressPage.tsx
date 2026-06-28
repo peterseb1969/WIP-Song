@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQueryDocuments } from '@wip/react'
 import { Loader2, TrendingUp, AlertTriangle } from 'lucide-react'
 import { useSinger } from '../contexts/SingerContext'
+import { useLessonExerciseCounts } from '../lib/useLessonExercises'
 import { BASE } from '../lib/config'
 import type { AttemptData, ExerciseData, LessonData, ProgressData } from '../lib/types'
 
@@ -30,6 +31,7 @@ export default function ProgressPage() {
   })
   const exercises = useQueryDocuments({ template_id: 'SONG_EXERCISE', filters: [], page_size: 100 })
   const lessons = useQueryDocuments({ template_id: 'SONG_LESSON', filters: [], page_size: 100 })
+  const { counts: exerciseCounts } = useLessonExerciseCounts()
 
   const exerciseById = new Map(
     (exercises.data?.items ?? []).map((d) => [d.document_id, d.data as unknown as ExerciseData]),
@@ -86,7 +88,7 @@ export default function ProgressPage() {
                         </span>
                         <span>{p.attempts_count ?? 0} attempts</span>
                         <span>
-                          {p.completed_exercise_codes?.length ?? 0}/{lesson?.exercise_refs.length ?? '?'} exercises
+                          {p.completed_exercise_codes?.length ?? 0}/{exerciseCounts.get(p.lesson_ref) ?? '?'} exercises
                         </span>
                       </div>
                     </Link>

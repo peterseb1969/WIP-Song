@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useDocument, useQueryDocuments } from '@wip/react'
 import { Loader2, ArrowLeft, AlertTriangle, Play, CheckCircle2, Circle } from 'lucide-react'
 import { useSinger } from '../contexts/SingerContext'
+import { useLessonExercises } from '../lib/useLessonExercises'
 import type { ExerciseData, LessonData, ProgressData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : '')
@@ -16,6 +17,8 @@ export default function LessonDetailPage() {
   // join client-side (no by-ids batch endpoint in @wip/client today).
   const exercises = useQueryDocuments({ template_id: 'SONG_EXERCISE', filters: [], page_size: 100 })
   const byId = new Map((exercises.data?.items ?? []).map((d) => [d.document_id, d.data as unknown as ExerciseData]))
+  // Ordered exercise ids come from SONG_LESSON_EXERCISE edges, not the doc.
+  const { exerciseIds } = useLessonExercises(id)
 
   const progressQ = useQueryDocuments({
     template_id: 'SONG_PROGRESS',
@@ -49,7 +52,7 @@ export default function LessonDetailPage() {
     )
   }
 
-  const firstOpen = lesson.exercise_refs.find((ref) => {
+  const firstOpen = exerciseIds.find((ref) => {
     const ex = byId.get(ref)
     return ex && !completed.has(ex.code)
   })
@@ -79,7 +82,7 @@ export default function LessonDetailPage() {
       {progress && (
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
           <h3 className="font-medium text-primary">
-            {completed.size}/{lesson.exercise_refs.length} exercises completed
+            {completed.size}/{exerciseIds.length} exercises completed
             {progress.best_score != null ? ` · best score ${progress.best_score}` : ''}
             {progress.attempts_count != null ? ` · ${progress.attempts_count} attempts` : ''}
           </h3>
@@ -87,7 +90,7 @@ export default function LessonDetailPage() {
       )}
 
       <ol className="space-y-2">
-        {lesson.exercise_refs.map((ref, i) => {
+        {exerciseIds.map((ref, i) => {
           const ex = byId.get(ref)
           if (!ex) {
             return (

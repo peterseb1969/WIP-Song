@@ -9,6 +9,7 @@ import { WIP_NAMESPACE } from '../lib/config'
 import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
+import { useLessonExercises } from '../lib/useLessonExercises'
 import { singerRange, suggestTransposition, transposeEvents } from '../lib/transpose'
 import { midiToNoteName, midiToFrequency, type NoteEvent } from '../lib/music'
 import { BASE } from '../lib/config'
@@ -74,14 +75,16 @@ export default function PracticePage() {
   // Lesson context (when launched from a lesson): progress writes + next-exercise.
   const { data: lessonDoc } = useDocument(lessonId ?? '')
   const lesson = lessonDoc?.data as LessonData | undefined
+  // Ordered exercise ids for this lesson come from SONG_LESSON_EXERCISE edges.
+  const { exerciseIds } = useLessonExercises(lessonId)
   const exerciseCatalog = useQueryDocuments({ template_id: 'SONG_EXERCISE', filters: [], page_size: 100 })
   const codeOfRef = new Map(
     (exerciseCatalog.data?.items ?? []).map((d) => [d.document_id, (d.data as unknown as ExerciseData).code]),
   )
   const nextExerciseRef = (() => {
-    if (!lesson || !id) return null
-    const idx = lesson.exercise_refs.indexOf(id)
-    return idx >= 0 ? lesson.exercise_refs[idx + 1] ?? null : null
+    if (!id) return null
+    const idx = exerciseIds.indexOf(id)
+    return idx >= 0 ? exerciseIds[idx + 1] ?? null : null
   })()
 
   const { singerId, singerData } = useSinger()
@@ -278,7 +281,7 @@ export default function PracticePage() {
       // Lesson context: upsert the singer×lesson progress doc (new version).
       // Loop takes never count — completing an exercise requires the whole thing.
       if (lessonId && lesson && singerId && exercise && !loopActive) {
-        const lessonExerciseCodes = lesson.exercise_refs
+        const lessonExerciseCodes = exerciseIds
           .map((ref) => codeOfRef.get(ref))
           .filter((c): c is string => !!c)
         await updateLessonProgress(wip, {
@@ -297,7 +300,7 @@ export default function PracticePage() {
       stoppingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- codeOfRef is rebuilt per render from the catalog query
-  }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson])
+  }, [activeTargets, loopActive, wip, createAttempt, singerId, id, exercise, lessonId, lesson, exerciseIds])
 
   const handleRecord = async () => {
     stopListenRef.current?.()

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQueryDocuments } from '@wip/react'
 import { Loader2, GraduationCap, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { useSinger } from '../contexts/SingerContext'
+import { useLessonExerciseCounts } from '../lib/useLessonExercises'
 import type { LessonData, ProgressData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
@@ -39,6 +40,7 @@ export default function LessonsPage() {
     filters: singerId ? [{ field: 'data.singer_ref', operator: 'eq', value: singerId }] : [],
     page_size: 100,
   })
+  const { counts: exerciseCounts } = useLessonExerciseCounts()
 
   const progressByLesson = new Map<string, ProgressData>(
     (progress.data?.items ?? []).map((d) => {
@@ -77,6 +79,7 @@ export default function LessonsPage() {
         {lessons.data?.items.map((doc) => {
           const lesson = doc.data as unknown as LessonData
           const p = progressByLesson.get(doc.document_id)
+          const exerciseCount = exerciseCounts.get(doc.document_id) ?? 0
           return (
             <Link
               key={doc.document_id}
@@ -85,11 +88,11 @@ export default function LessonsPage() {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-text">{lesson.title}</h3>
-                <StatusBadge progress={p} total={lesson.exercise_refs.length} />
+                <StatusBadge progress={p} total={exerciseCount} />
               </div>
               {lesson.description && <p className="mt-2 text-sm text-text-muted">{lesson.description}</p>}
               <div className="mt-3 flex gap-3 text-xs text-text-muted">
-                <span>{lesson.exercise_refs.length} exercises</span>
+                <span>{exerciseCount} exercises</span>
                 {pretty(lesson.difficulty) && <span>{pretty(lesson.difficulty)}</span>}
                 {p?.best_score != null && <span>best {p.best_score}</span>}
               </div>
