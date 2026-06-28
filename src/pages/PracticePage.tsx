@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useDocument, useQueryDocuments, useCreateDocument, useWipClient } from '@wip/react'
-import { Loader2, ArrowLeft, AlertTriangle, Play, Mic, Square, RotateCcw, Check, ChevronRight, Repeat } from 'lucide-react'
+import { Loader2, ArrowLeft, AlertTriangle, Play, Pause, Mic, Square, RotateCcw, Check, ChevronRight, Repeat } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import { useSinger } from '../contexts/SingerContext'
 import { WIP_NAMESPACE } from '../lib/config'
-import { playNotes, startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
+import { startRecording, type PitchSample, type RecordingSession } from '../lib/audio'
 import { scoreAttempt, traceToEvents, type AttemptScores } from '../lib/scoring'
 import { updateLessonProgress, COMPLETION_SCORE } from '../lib/progress'
 import { useLessonExercises } from '../lib/useLessonExercises'
+import { useMelodyPlayer } from '../lib/useMelodyPlayer'
 import { singerRange, suggestTransposition, transposeEvents } from '../lib/transpose'
 import { midiToNoteName, midiToFrequency, type NoteEvent } from '../lib/music'
 import { BASE } from '../lib/config'
 import type { ExerciseData, LessonData, SongData } from '../lib/types'
 
-type Phase = 'idle' | 'listening' | 'recording' | 'saving' | 'done'
+type Phase = 'idle' | 'listening' | 'paused' | 'recording' | 'saving' | 'done'
 
 /** Live tuner readout while recording: note name, cents deviation, Hz. */
 function Tuner({ sample }: { sample: PitchSample | null }) {
@@ -159,6 +160,17 @@ export default function PracticePage() {
 
   const totalMs = activeTargets.reduce((end, e) => Math.max(end, e.start_ms + e.duration_ms), 0)
 
+  // Pausable synth playback for Listen (non-backing). On natural end, re-play
+  // if looping, else return to idle. synthRef lets onDone re-trigger play().
+  const synthRef = useRef<ReturnType<typeof useMelodyPlayer> | null>(null)
+  const synth = useMelodyPlayer(activeTargets, speed, {
+    onDone: () => {
+      if (loopingRef.current) synthRef.current?.play()
+      else setPhase((p) => (p === 'listening' ? 'idle' : p))
+    },
+  })
+  synthRef.current = synth
+
   // Backing-track slice playback for song sections with audio.
   const hasBacking = !!song?.audio_backing
   const stopBacking = () => {
@@ -198,37 +210,47 @@ export default function PracticePage() {
     [],
   )
 
+  const stopListen = () => {
+    loopingRef.current = false
+    stopListenRef.current?.() // backing, if any
+    synth.stop()
+    setPhase('idle')
+  }
+
   const handleListen = () => {
-    if (phase === 'listening') {
+    if (phase === 'listening' || phase === 'paused') {
       // Second click stops — essential for looped listening, harmless otherwise.
-      loopingRef.current = false
-      stopListenRef.current?.()
-      setPhase('idle')
+      stopListen()
       return
     }
     setPhase('listening')
-    const done = () => {
-      loopingRef.current = false
-      setPhase((p) => (p === 'listening' ? 'idle' : p))
-    }
     loopingRef.current = loopActive
     if (hasBacking) {
+      const done = () => {
+        loopingRef.current = false
+        setPhase((p) => (p === 'listening' || p === 'paused' ? 'idle' : p))
+      }
       playBackingSlice(done, loopActive)
       stopListenRef.current = () => stopBacking()
-    } else if (loopActive) {
-      // Synth loop: replay the range until the user stops.
-      let cancel: (() => void) | null = null
-      const playOnce = () => {
-        cancel = playNotes(activeTargets, () => (loopingRef.current ? playOnce() : done()), speed)
-      }
-      playOnce()
-      stopListenRef.current = () => {
-        loopingRef.current = false
-        cancel?.()
-      }
     } else {
-      stopListenRef.current = playNotes(activeTargets, done, speed)
+      // Synth: pausable via the player; loop + end-of-play handled in its onDone.
+      stopListenRef.current = null
+      synth.play()
     }
+  }
+
+  const pauseListen = () => {
+    if (phase !== 'listening') return
+    if (hasBacking) backingRef.current?.pause()
+    else synth.pause()
+    setPhase('paused')
+  }
+
+  const resumeListen = () => {
+    if (phase !== 'paused') return
+    if (hasBacking) void backingRef.current?.play()
+    else synth.resume()
+    setPhase('listening')
   }
 
   const finishRecording = useCallback(async () => {
@@ -423,7 +445,7 @@ export default function PracticePage() {
         <SpeedControl
           value={speed}
           onChange={setSpeed}
-          disabled={phase === 'listening' || phase === 'recording' || phase === 'saving'}
+          disabled={phase === 'listening' || phase === 'paused' || phase === 'recording' || phase === 'saving'}
         />
 
         <div className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-surface p-0.5">
@@ -533,21 +555,40 @@ export default function PracticePage() {
         {transpose !== 0 && hasBacking && (
           <span className="text-xs text-text-muted">backing track stays in the original key</span>
         )}
-        <button
-          type="button"
-          onClick={handleListen}
-          disabled={phase === 'recording' || phase === 'saving'}
-          className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {phase === 'listening' ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          {phase === 'listening' ? (loopActive ? 'Stop loop' : 'Stop') : loopActive ? 'Listen (loop)' : 'Listen'}
-        </button>
+        {phase === 'listening' || phase === 'paused' ? (
+          <>
+            <button
+              type="button"
+              onClick={phase === 'listening' ? pauseListen : resumeListen}
+              className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              {phase === 'listening' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {phase === 'listening' ? 'Pause' : 'Resume'}
+            </button>
+            <button
+              type="button"
+              onClick={handleListen}
+              className="flex items-center gap-2 rounded-md bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
+            >
+              <Square className="h-4 w-4" /> {loopActive ? 'Stop loop' : 'Stop'}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={handleListen}
+            disabled={phase === 'recording' || phase === 'saving'}
+            className="flex items-center gap-2 rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Play className="h-4 w-4" /> {loopActive ? 'Listen (loop)' : 'Listen'}
+          </button>
+        )}
 
         {phase !== 'recording' ? (
           <button
             type="button"
             onClick={() => void handleRecord()}
-            disabled={phase === 'listening' || phase === 'saving'}
+            disabled={phase === 'listening' || phase === 'paused' || phase === 'saving'}
             className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Mic className="h-4 w-4" /> {scores ? 'Sing again' : 'Sing'}

@@ -17,9 +17,19 @@ export type PlayerStatus = 'stopped' | 'playing' | 'paused'
  * Changing rate only takes effect on the next play()/resume() (the transport
  * disables the speed control while not stopped).
  */
-export function useMelodyPlayer(events: NoteEvent[], rate = 1) {
+export function useMelodyPlayer(
+  events: NoteEvent[],
+  rate = 1,
+  opts: { onDone?: () => void } = {},
+) {
   const [status, setStatusState] = useState<PlayerStatus>('stopped')
   const [playheadMs, setPlayheadMs] = useState<number | null>(null)
+
+  // onDone fires when playback reaches the end on its own (not on manual
+  // stop). Read via ref so callers can pass a fresh closure each render
+  // (e.g. PracticePage's loop, which re-plays on done).
+  const onDoneRef = useRef(opts.onDone)
+  onDoneRef.current = opts.onDone
 
   // statusRef mirrors `status` for use inside callbacks (avoids stale closures
   // and keeps logic out of setState updaters, which StrictMode may double-run).
@@ -95,6 +105,7 @@ export function useMelodyPlayer(events: NoteEvent[], rate = 1) {
         const cur = offsetRef.current + (performance.now() - segStartRef.current) * rateRef.current
         if (cur >= total) {
           stop()
+          onDoneRef.current?.()
           return
         }
         setPlayheadMs(cur)
