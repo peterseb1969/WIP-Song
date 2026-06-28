@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useDocument } from '@wip/react'
-import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Square } from 'lucide-react'
+import { Loader2, ArrowLeft, AlertTriangle, Mic, Play, Pause, Square } from 'lucide-react'
 import NoteViews from '../components/NoteViews'
 import SpeedControl from '../components/SpeedControl'
 import AudioTrackUpload from '../components/AudioTrackUpload'
 import MarkersEditor, { useSaveMarkers } from '../components/MarkersEditor'
 import CreateExerciseFromSection from '../components/CreateExerciseFromSection'
-import { playNotes } from '../lib/audio'
+import { useMelodyPlayer } from '../lib/useMelodyPlayer'
 import type { Marker, SongData } from '../lib/types'
 
 const pretty = (v?: string) => (v ? v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, ' ') : undefined)
@@ -61,38 +61,18 @@ export default function SongDetailPage() {
     )
   }
 
-  // Melody synth playback (MIDI imports carry notes, not audio) with playhead.
-  const [playheadMs, setPlayheadMs] = useState<number | null>(null)
+  // Melody synth playback (MIDI imports carry notes, not audio) with a
+  // pausable playhead. Rebase to 0 to skip leading silence (real imports:
+  // Bohemian Rhapsody's vocals enter at ~52s); add firstStart back for display
+  // so the playhead lines up with the un-rebased NoteViews timeline.
   const [speed, setSpeed] = useState(1)
-  const stopSynthRef = useRef<(() => void) | null>(null)
-  const rafRef = useRef<number | null>(null)
-
-  const stopMelody = () => {
-    stopSynthRef.current?.()
-    stopSynthRef.current = null
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    setPlayheadMs(null)
-  }
-  const playMelody = () => {
-    const events = song?.melody?.events
-    if (!events?.length) return
-    stopMelody()
-    // Skip leading silence (real imports: Bohemian Rhapsody's vocals enter at ~52s).
-    const firstStart = Math.min(...events.map((e) => e.start_ms))
-    stopSynthRef.current = playNotes(
-      events.map((e) => ({ ...e, start_ms: e.start_ms - firstStart })),
-      stopMelody,
-      speed,
-    )
-    const startedAt = performance.now()
-    const tick = () => {
-      // Wall-clock advances 1:1; the melody timeline advances at `speed`.
-      setPlayheadMs(firstStart + (performance.now() - startedAt) * speed)
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-  }
-  useEffect(() => stopMelody, []) // stop on unmount
+  const { events: playableEvents, firstStart } = useMemo(() => {
+    const evs = song?.melody?.events ?? []
+    const fs = evs.length ? Math.min(...evs.map((e) => e.start_ms)) : 0
+    return { events: evs.map((e) => ({ ...e, start_ms: e.start_ms - fs })), firstStart: fs }
+  }, [song?.melody])
+  const player = useMelodyPlayer(playableEvents, speed)
+  const playheadMs = player.playheadMs == null ? null : player.playheadMs + firstStart
 
   if (isLoading) {
     return (
@@ -185,23 +165,42 @@ export default function SongDetailPage() {
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-text">Melody</h2>
             <div className="flex items-center gap-2">
-              <SpeedControl value={speed} onChange={setSpeed} disabled={playheadMs != null} />
-              {playheadMs == null ? (
+              <SpeedControl value={speed} onChange={setSpeed} disabled={player.status !== 'stopped'} />
+              {player.status === 'stopped' ? (
                 <button
                   type="button"
-                  onClick={playMelody}
+                  onClick={player.play}
                   className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <Play className="h-4 w-4" /> Play melody
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={stopMelody}
-                  className="flex items-center gap-2 rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
-                >
-                  <Square className="h-4 w-4" /> Stop
-                </button>
+                <>
+                  {player.status === 'playing' ? (
+                    <button
+                      type="button"
+                      onClick={player.pause}
+                      className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <Pause className="h-4 w-4" /> Pause
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={player.resume}
+                      className="flex items-center gap-2 rounded-md border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <Play className="h-4 w-4" /> Resume
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={player.stop}
+                    className="flex items-center gap-2 rounded-md bg-danger px-3 py-1.5 text-sm font-medium text-white hover:bg-danger/90 focus:outline-none focus:ring-2 focus:ring-danger/40"
+                  >
+                    <Square className="h-4 w-4" /> Stop
+                  </button>
+                </>
               )}
             </div>
           </div>
