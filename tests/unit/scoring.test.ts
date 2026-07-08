@@ -20,9 +20,14 @@ describe('scoreAttempt', () => {
     expect(s.overall_score).toBeGreaterThanOrEqual(95)
   })
 
-  it('gives half pitch credit for the right note an octave off (guitarist rule)', () => {
+  it('gives zero for the right note an octave off by default (tolerance Off)', () => {
     const s = scoreAttempt(TARGET, steady(57)) // A3 vs target A4
-    expect(s.pitch_score).toBe(50)
+    expect(s.pitch_score).toBe(0)
+  })
+
+  it('gives full credit for the right note an octave off with ±1 tolerance (guitarist rule)', () => {
+    const s = scoreAttempt(TARGET, steady(57), 1) // A3 vs target A4
+    expect(s.pitch_score).toBe(100)
   })
 
   it('gives zero for silence', () => {
