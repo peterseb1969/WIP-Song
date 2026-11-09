@@ -1,4 +1,5 @@
 import 'dotenv/config'  // Must be first — loads .env before any other module reads process.env
+import './lib/api-key.js'  // Second — resolves WIP_API_KEY_FILE into WIP_API_KEY
 import express from 'express'
 import cors from 'cors'
 import session from 'express-session'
