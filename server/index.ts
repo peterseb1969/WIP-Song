@@ -156,7 +156,14 @@ app.use('/', router)
 // --- Start ---
 async function main() {
   await initAuth()
-  await initAgent()
+  // The AskBar agent is optional: if MCP is unreachable or refuses us, the app
+  // and its healthcheck still come up and /api/ask reports itself unavailable.
+  // Health must never depend on WIP (or its MCP server) being reachable.
+  try {
+    await initAgent()
+  } catch (err) {
+    console.warn('⚠ AskBar agent unavailable — MCP init failed:', (err as Error).message)
+  }
   app.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`)
   })

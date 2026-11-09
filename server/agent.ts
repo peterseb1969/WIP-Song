@@ -136,8 +136,11 @@ export async function initAgent() {
   }
 
   const transport = createTransport()
-  mcpClient = new Client({ name: 'wip-query-agent', version: '0.1.0' })
-  await mcpClient.connect(transport)
+  // Publish the client only once connected: a failed connect must leave
+  // mcpClient null so ask() reports "unavailable" instead of using a dead client.
+  const client = new Client({ name: 'wip-query-agent', version: '0.1.0' })
+  await client.connect(transport)
+  mcpClient = client
   console.log('✓ MCP client connected')
 
   // Fetch and filter tools
