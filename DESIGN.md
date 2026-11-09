@@ -217,7 +217,7 @@ No circular references → no draft mode needed.
 
 ## UI Plan — v0.1 (approved by Peter 2026-06-11, Phase 4 gate)
 
-App identity: id `song`, path `/apps/song`, Express port **3016**, Vite port **5181**.
+App identity: id `song`, label `song` (served at the root of its own origin, `https://song.<host>/`), Express port **3016**, Vite port **5181**.
 
 **Audio architecture:** recording via MediaRecorder (webm/opus); live pitch
 detection via Web Audio autocorrelation (client-side, real-time); reference

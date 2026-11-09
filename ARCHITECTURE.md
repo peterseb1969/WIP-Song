@@ -15,8 +15,11 @@ Browser ── @wip/client+react hooks ──► /wip/* ── @wip/proxy ──
 ```
 
 Vite (5181) proxies `/api`, `/wip`, `/server-api` to Express in dev; in
-production Express serves `dist/` itself under `APP_BASE_PATH` (CASE-370
-path-prefix contract; every client URL derives from `import.meta.env.BASE_URL`).
+production Express serves `dist/` itself at `/`. The app is served at the root
+of its own origin (`https://song.<host>/`); every client URL derives from
+`import.meta.env.BASE_URL`, which is `/`. Unmatched paths under the API
+prefixes (`/api`, `/auth`, `/wip`, `/server-api`, `/mcp`) answer 404 JSON,
+never `index.html`.
 
 ## Server (`server/`)
 

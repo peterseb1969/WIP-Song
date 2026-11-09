@@ -59,8 +59,8 @@ WIP_API_KEY=<plaintext dev key>
 **Read this before scaffolding any app code:** `docs/wip-deployable-app-contract.md` (bundled into this project by the scaffold). Four-line summary:
 
 1. **Source repo** needs `Dockerfile.dev` + correct `vite.config.ts` (`server.host: '0.0.0.0'`, dev proxy targets *your* Express port, not 3001). Client fetches use `import.meta.env.BASE_URL`, never bare paths.
-2. **WIP repo `apps/<name>/wip-app.yaml`** declares both http and dev ports, `WIP_BASE_URL` via `from_component: router`, `APP_BASE_PATH` literal, and a healthcheck that doesn't depend on WIP being reachable.
-3. **Verify** with `wip-deploy install --target dev --app <name> --app-source <name>=~/Development/WIP-<name>` — SPA must load at `https://localhost:8443/apps/<name>/` on the first try, container healthy, no manual env patching.
+2. **WIP repo `apps/<name>/wip-app.yaml`** declares both http and dev ports, `WIP_BASE_URL` via `from_component: router`, `app_metadata.label`, routes and a healthcheck from `/` (the healthcheck must not depend on WIP being reachable). There is no base path: no `APP_BASE_PATH` / `VITE_BASE_PATH` (the manifest is refused if it sets them).
+3. **Verify** with `wip-deploy install --target dev --app <name> --app-source <name>=~/Development/WIP-<name>` — SPA must load at the root of the app's own origin, `https://<label>.wip.localhost:8443/` (here `https://song.wip.localhost:8443/`), on the first try, container healthy, no manual env patching.
 4. **If something breaks**, find the failure signature in the paper's "What breaks when you skip step N" annex. Once `/check-app-deployability` ships, run it before considering your scaffold done.
 
 The contract is target-agnostic — compose, k8s, and apps-only installs satisfy the same contract.

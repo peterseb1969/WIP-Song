@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Served at the root of its own origin, `https://song.<host>/` (CASE-1115,
+  after WIP's CASE-1103 removed path mode). The `APP_BASE_PATH` /
+  `VITE_BASE_PATH` plumbing is gone from Vite, the server, the Dockerfile and
+  CI; the image is built at Vite's default base `/`. Unmatched API paths
+  (`/api`, `/auth`, `/wip`, `/server-api`, `/mcp`) answer 404 JSON instead of
+  `index.html`; the server trusts the edge proxy so the secure session cookie
+  is set; the image starts tsx by path (tsx is now a runtime dependency).
+  Libraries: `@wip/client` 0.107.0, `@wip/proxy` 0.9.0, `@wip/react` 0.26.1.
+
 - Range-aware transposition on the practice page: a ±semitone control plus
   a one-click suggestion ("Transpose −12 for your range") derived from the
   singer's profile range (explicit low/high beats the voice-type default;

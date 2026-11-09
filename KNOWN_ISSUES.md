@@ -20,6 +20,8 @@ added 2026-06-12).
   dev reinstall included `--app-source song=~/Development/WIP-Song`;
   container healthy, app live at `https://localhost:8443/apps/song/` behind
   the auth gateway. The manifest is committed in World-in-a-Pie (6093751).
+  (Path mode has since been removed, CASE-1103/1115: the app is now served at
+  `https://song.<host>/`; `/apps/song/` answers 404.)
   Operational notes from that run:
   - Song's app lives at the **repo root** — pass the repo itself as the
     `--app-source` path (unlike clintrial/dnd, which need a subdirectory).

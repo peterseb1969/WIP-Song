@@ -49,12 +49,13 @@ npm test        # unit tests + live data-layer tests (skipped if WIP is down)
 
 ## Deployment
 
-The app satisfies the wip-deployable app contract (verified 2026-06-12:
-`check-app-deployability` 7/7, dev install healthy, app live at
-`https://localhost:8443/apps/song/`): `Dockerfile.dev` (dev override),
-two-stage `Dockerfile` (`VITE_BASE_PATH` build ARG, health check independent
-of WIP), base-path-aware client/server, and `apps/song/wip-app.yaml` in the
-WIP repo (ports 3016/5181, `/apps/song`).
+The app satisfies the wip-deployable app contract
+(`wip-deploy check-app-deployability`): it is served at the root of its own
+origin, `https://song.<host>/` (`https://song.wip.localhost:8443/` on the local
+dev install), with no base path. `Dockerfile.dev` (dev override), two-stage
+`Dockerfile` (built at Vite's default base `/`, health check independent of
+WIP, tsx started by path), and `apps/song/wip-app.yaml` in the WIP repo
+(label `song`, ports 3016/5181, routes and healthcheck from `/`).
 
 ```bash
 wip-deploy install --target dev --app song --app-source song=~/Development/WIP-Song

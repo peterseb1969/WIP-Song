@@ -1,10 +1,9 @@
 /**
- * Runtime config helpers. All client URLs derive from import.meta.env.BASE_URL
- * (set by Vite from APP_BASE_PATH) so the app works identically at '/' in
- * local dev and at '/apps/song/' behind the wip-deploy ingress (CASE-370).
+ * Runtime config helpers. All client URLs derive from import.meta.env.BASE_URL,
+ * which is Vite's default '/': the app is served at the root of its own origin.
  */
 
-/** Base URL with trailing slash guaranteed ('/' in dev, '/apps/song/' deployed). */
+/** Base URL with trailing slash guaranteed ('/'). */
 export const BASE = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : import.meta.env.BASE_URL + '/'

@@ -17,8 +17,8 @@ name: Build & Push Image
 # sha-<short>. The per-arch tags (<tag>-amd64, <tag>-arm64) are provenance;
 # deploys pin the bare <tag>.
 #
-# VITE_BASE_PATH must match the platform manifest's APP_BASE_PATH
-# (apps/song/wip-app.yaml in World-in-a-Pie).
+# The image is built at Vite's default base '/': the app is served at the root
+# of its own origin (https://song.<host>/), with no base path.
 
 on:
   workflow_dispatch:
@@ -70,7 +70,6 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker buildx build \
-            --build-arg VITE_BASE_PATH=/apps/song/ \
             --build-arg VITE_BUILD_STAMP="$(date -u +%FT%TZ)" \
             --build-arg VITE_BUILD_SHA="$(git rev-parse --short HEAD)" \
             -t "ghcr.io/${{ github.repository_owner }}/wip-song:${{ needs.resolve-tag.outputs.tag }}-${{ matrix.arch }}" \

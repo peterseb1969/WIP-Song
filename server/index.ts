@@ -12,19 +12,19 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PORT = parseInt(process.env.PORT || '3016')
-// Path-prefix-ready for k8s/ingress (CASE-370). Net-zero for local dev:
-// APP_BASE_PATH unset → BASE_PATH '' → the router mounts at '/' and the session
-// cookie path is '/', identical to before.
-const BASE_PATH = (process.env.APP_BASE_PATH || '').replace(/\/+$/, '')
-const COOKIE_PATH = BASE_PATH ? BASE_PATH + '/' : '/'
+// The app is served at the root of its own origin (https://<label>.<host>/),
+// locally and deployed alike, so every route mounts at '/'.
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const router = express.Router()
 
+// HTTPS terminates at the edge proxy: trust its X-Forwarded-* so req.secure
+// holds and the production session cookie (secure: true) is actually set.
+app.set('trust proxy', 1)
 app.use(cors())
 
-// --- Session (required for OIDC auth). Cookie scoped to the app's base path
-// so sibling apps behind the same ingress don't share it. ---
+// --- Session (required for OIDC auth). The app has an origin of its own, so
+// the cookie is not shared with sibling apps. ---
 router.use(session({
   secret: process.env.SESSION_SECRET || 'dev-session-secret',
   resave: false,
@@ -32,7 +32,7 @@ router.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    path: COOKIE_PATH,
+    path: '/',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
   },
 }))
@@ -128,27 +128,36 @@ router.get('/api/me', (req, res) => {
 })
 
 // --- Production: serve the built SPA from this router so the app is
-// self-contained behind the ingress (CASE-370). Dev serves the SPA via Vite. ---
+// self-contained. Dev serves the SPA via Vite. ---
+// An unmatched path under an API prefix answers 404 JSON for any method, never
+// index.html: a JSON client calling a route this server lacks must see a
+// missing route, not a 200 page it cannot parse.
+const API_PREFIXES = ['/api', '/auth', '/wip', '/server-api', '/mcp']
+const isApiPath = (p: string) => API_PREFIXES.some(pre => p === pre || p.startsWith(pre + '/'))
 if (process.env.NODE_ENV === 'production') {
   const distDir = path.resolve(__dirname, '..', 'dist')
   router.use(express.static(distDir))
   // SPA fallback for client-side routes. A middleware (not app.get('*')) —
   // Express 5 / path-to-regexp rejects a bare '*' route pattern.
   router.use((req, res, next) => {
+    if (isApiPath(req.path)) return next()
     if (req.method !== 'GET') return next()
     res.sendFile(path.join(distDir, 'index.html'))
   })
 }
+router.use((req, res, next) => {
+  if (!isApiPath(req.path)) return next()
+  res.status(404).json({ error: 'not_found', path: req.path })
+})
 
-// Mount everything under the base path (CASE-370); '/' for local dev.
-app.use(BASE_PATH || '/', router)
+app.use('/', router)
 
 // --- Start ---
 async function main() {
   await initAuth()
   await initAgent()
   app.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}${BASE_PATH || ''}`)
+    console.log(`Server listening on http://localhost:${PORT}`)
   })
 }
 

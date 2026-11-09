@@ -17,9 +17,8 @@ import ExerciseFormPage from './pages/ExerciseFormPage'
 import SettingsPage from './pages/SettingsPage'
 import { useAuthoringEnabled } from './lib/authoring'
 
-// Path-prefix-ready for k8s/ingress (CASE-370): without this basename, React
-// Router's <Link>/navigate() drop the deploy prefix and reloads 404 at the
-// ingress. Net-zero for local dev — BASE_URL is '/' → basename '/'.
+// Router basename follows Vite's BASE_URL, which is '/' (the app is served at
+// the root of its own origin).
 const BASENAME = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'
 
 export default function App() {

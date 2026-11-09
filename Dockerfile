@@ -1,6 +1,7 @@
-# Two-stage build for a wip-deploy-installable query app (CASE-370).
-# Stage 1 builds the SPA; stage 2 runs the Express server (via tsx), which in
-# production also serves the built SPA from ./dist under APP_BASE_PATH.
+# Two-stage build for a wip-deploy-installable app.
+# Stage 1 builds the SPA at Vite's default base '/'; stage 2 runs the Express
+# server (via tsx), which in production also serves the built SPA from ./dist.
+# The app is served at the root of its own origin: there is no base path.
 
 FROM node:22-slim AS build
 WORKDIR /app
@@ -8,9 +9,6 @@ COPY package.json package-lock.json* ./
 COPY libs ./libs
 RUN npm ci
 COPY . .
-# Deploy path prefix baked into the static bundle (wip-deployable contract).
-ARG VITE_BASE_PATH=/
-ENV VITE_BASE_PATH=$VITE_BASE_PATH
 # Build stamp (CASE-472) — baked from CI --build-arg; 'dev' default hides it.
 ARG VITE_BUILD_STAMP=dev
 ARG VITE_BUILD_SHA=dev
@@ -34,8 +32,9 @@ COPY package.json tsconfig.json ./
 COPY server ./server
 
 EXPOSE 3016
-# Health endpoint is mounted under APP_BASE_PATH (default '' → '/api/health').
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3016)+(process.env.APP_BASE_PATH||'')+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3016)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["npx", "tsx", "server/index.ts"]
+# Run tsx by path, not through npx: the image must start without fetching
+# anything from the npm registry (tsx is a runtime dependency).
+CMD ["./node_modules/.bin/tsx", "server/index.ts"]
