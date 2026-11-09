@@ -1,5 +1,7 @@
 Improve an existing constellation app. Use this for bug fixes, UX refinements, feature additions, and polish after Phase 4 is complete.
 
+**Record the phase.** Before any other step, run `python3 .claude/scripts/set-phase.py improve`. It writes `.claude/.app-phase`; commit that file with this phase's work, and never edit it by hand.
+
 ### This is NOT a formal phase
 
 There is no gate, no approval step for starting improvements. But there are rules that prevent waste, regression, and scope creep.
@@ -35,6 +37,7 @@ Before committing any change:
 You have no memory between sessions. At the start of every improvement session:
 - Run `/wip-status` to confirm WIP state
 - Read ONLY the files you'll be changing — not the whole app
+- Read the card for the work: `docs/cards/build.md` for app code and UI, `docs/cards/model.md` when the change touches the data model (Rule 6)
 - Ask the user what needs fixing — don't guess from reading code
 
 #### 6. Data model changes go back to the formal process

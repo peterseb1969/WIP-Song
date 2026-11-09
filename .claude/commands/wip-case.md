@@ -13,11 +13,12 @@ backend by construction — do not reproduce its content here.
 **Pre-flight (do this first, every time):**
 
 1. **Tier check** — `test -f .claude/kb.json`. If missing, tell Peter: "This is a tier-2 repo — cross-agent cases are not enabled. Enable with the scaffold's `--enable-kb`." Then STOP.
-2. **Cache-ensure** — `test -f ~/.cache/wip-kb-client/kb-client.sh`. If missing, install the served client using the two facts in `.claude/kb.json`:
+2. **Cache-ensure** — `test -f ~/.cache/wip-kb-client/kb-client.sh && command -v kbc >/dev/null`. Both halves matter: every verb below invokes the on-PATH `kbc` shim, which is a separate file from the cached runner and is not self-healed by a flow that never reaches the runner. If either is missing, install the served client using the two facts in `.claude/kb.json`:
    ```bash
    curl -fsSk -H "X-API-Key: $(cat "$(python3 -c 'import json;print(json.load(open(".claude/kb.json"))["kb_api_key_file"])')")" \
-     "$(python3 -c 'import json;print(json.load(open(".claude/kb.json"))["kb_app_url"])')/apps/kb/server-api/kb-client/install" | sh
+     "$(python3 -c 'import json;print(json.load(open(".claude/kb.json"))["kb_app_url"])')/server-api/kb-client/install" | sh
    ```
+   If `kbc` still does not resolve after the install (`~/.local/bin` absent from PATH), invoke the runner directly — `bash ~/.cache/wip-kb-client/kb-client.sh <script> …` is the equivalent form; do not loop the install.
 
 **`read` short-circuit:**
 
@@ -60,5 +61,5 @@ If `$ARGUMENTS` starts with `list`:
 
 **All write verbs** (`file` / `respond` / `comment` / `close` / `implement`):
 
-1. Read your session ID from `.claude/.session-id` (`cat "$CLAUDE_PROJECT_DIR/.claude/.session-id"`, fall back to `$PWD/.claude/.session-id`) — it is the `filed_by`/`authored_by` attribution on every case write. **Never type a session ID by hand.** If the file is missing, run `/wip-setup` (fresh) or `/wip-wake` (continuation) first.
+1. **Attribution is filled by the client — do not type it.** `kb-write.py` fills `filed_by` / `authored_by` on a `CASE_RECORD` and `author` on a `CASE_RESPONSE` from `.claude/.session-id`; leave those keys out of the frontmatter. A value you do type must be a session ID, or the write is refused. If `.claude/.session-id` is missing, run `/wip-setup` (fresh) or `/wip-wake` (continuation) first.
 2. You MUST Read `~/.cache/wip-kb-client/case-workflow.md` — the served playbook — and execute the verb's write flow from there. The playbook is version-matched to the instance and is the single source of truth for the write surface (it currently writes via `kb-write.py <TYPE>` → `POST kb/write/:type`). Do not guess endpoints, payloads, or status transitions from memory, and do not fall back to retired mechanisms — `add-to-kb.py`, `case_allocate.py`, FS claim helpers, **or the older `/cases/<n>/respond|comment|close` gateway verbs** (all superseded by the served write flow).

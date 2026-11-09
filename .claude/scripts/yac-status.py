@@ -1,0 +1,347 @@
+#!/usr/bin/env python3
+"""Per-YAC status line: role, current /wip-* command, context usage.
+
+Two modes, both fed JSON on stdin by Claude Code:
+
+  yac-status.py hook   -- hook handler. Records what the YAC is doing in
+                          .claude/.yac-activity so the status line can show it.
+                          The activity is written by hooks, not by the slash
+                          command's prose, so it cannot be skipped by the model.
+      UserPromptSubmit   a /wip-* command sets the activity
+                         ("/wip-case implement 345" -> "implementing CASE-345",
+                         "/wip-report session-end" -> "wip-report session-end");
+                         any other prompt keeps it but marks it as the last
+                         command rather than the current one, shown as
+                         "last: implementing CASE-345" with its age running on
+                         (the operator answers questions mid-command all the
+                         time). A turn the harness injects (a task
+                         notification, a system reminder) is no operator
+                         message and leaves the record untouched
+      PreToolUse(Skill)  the model invoking a wip-* skill itself sets it too
+      PostToolUse(Bash)  "kb-write.py CASE_RECORD --patch status=X
+                          --match case_number=N" -- the case changed state
+
+  yac-status.py line   -- status line command. Prints one line, e.g.
+                          "BE-YAC · implementing CASE-345 · 12m · ctx 42% (84k/200k)"
+                          and only the context part when there is no activity.
+                          It also writes the context usage to the project's
+                          .claude-context-pct ("42% (84k/200k tokens)"), the
+                          file CLAUDE.md's stop rule tells the agent to read:
+                          the status line is the only place the numbers exist.
+
+An activity is stamped with the YAC session id and hidden once that id
+changes, so /wip-wake and /wip-setup start every session with a clean line.
+
+Both files are local state, never content: the script adds each to the
+clone's .git/info/exclude before writing it, so no repo needs a .gitignore
+entry for them (app repos scaffolded without one would otherwise show them
+as untracked on every refresh).
+
+Vendored into each YAC clone as .claude/scripts/yac-status.py by the
+scaffold. A hook must never break the session, so every failure is
+swallowed.
+"""
+
+from __future__ import annotations
+
+import contextlib
+import json
+import os
+import re
+import sys
+import time
+from pathlib import Path
+
+ACTIVITY_FILE = ".yac-activity"
+CONTEXT_FILE = ".claude-context-pct"
+
+# From this share of the context window on, the context part shows in red:
+# time to wrap up the session before compaction does it.
+CONTEXT_WARN_PERCENT = 80
+# The slim app profile (PROFILE="slim" in .claude/.app-meta) stops at an
+# absolute number of tokens used instead: its model's window is large enough
+# that 80% of it is far past where the work stays reliable.
+SLIM_WARN_TOKENS = 300_000
+PROFILE_RE = re.compile(r'^PROFILE="?([\w-]+)"?\s*$', re.MULTILINE)
+RED = "\033[31m"
+RESET = "\033[0m"
+
+# /wip-case verbs that act on one case -> how the status line names them.
+# Any other /wip-* command shows as itself.
+VERB_LABELS = {
+    "read": "reading",
+    "implement": "implementing",
+    "respond": "responding",
+    "comment": "commenting",
+    "close": "closing",
+    "reopen": "reopening",
+}
+
+# CASE_RECORD status after a transition -> label shown until the next activity.
+DONE_LABELS = {
+    "implemented": "implemented",
+    "responded": "responded",
+    "closed": "closed",
+    "open": "reopened",
+}
+
+WIP_COMMAND_RE = re.compile(r"^\s*/?(wip-[a-z][\w-]*)\b\s*(.*)$", re.IGNORECASE | re.DOTALL)
+CASE_VERB_RE = re.compile(r"(\w+)\s+(?:CASE-)?(\d+)\b", re.IGNORECASE)
+# A first argument shown beside the command name: one short word, no prose.
+SHOWN_ARG_RE = re.compile(r"[A-Za-z][\w.-]{0,23}")
+# The shell tool's name per harness: Claude Code, Qwen Code. Both send the
+# command line as tool_input.command.
+SHELL_TOOLS = ("Bash", "run_shell_command")
+# The skill tool's name per harness: Claude Code, Qwen Code. Both send the
+# skill's name as tool_input.skill; only Claude Code also sends its args.
+SKILL_TOOLS = ("Skill", "skill")
+PATCH_RE = re.compile(
+    r"CASE_RECORD\s+--patch\s+status=(\w+)\s+--match\s+case_number=(?:CASE-)?(\d+)"
+)
+
+
+def claude_dir(payload: dict) -> Path:
+    project = (
+        os.environ.get("CLAUDE_PROJECT_DIR")
+        or (payload.get("workspace") or {}).get("project_dir")
+        or payload.get("cwd")
+        or os.getcwd()
+    )
+    return Path(project) / ".claude"
+
+
+def wip_activity(text: str) -> str | None:
+    """What the status line shows for a /wip-* command, or None for anything else."""
+    command = WIP_COMMAND_RE.match(text)
+    if not command:
+        return None
+    name, rest = command.group(1).lower(), command.group(2)
+    if name == "wip-case":
+        verb = CASE_VERB_RE.match(rest)
+        if verb and verb.group(1).lower() in VERB_LABELS:
+            return f"{VERB_LABELS[verb.group(1).lower()]} CASE-{verb.group(2)}"
+    words = rest.split()
+    if words and SHOWN_ARG_RE.fullmatch(words[0]):
+        return f"{name} {words[0]}"
+    return name
+
+
+def ensure_git_excluded(project: Path, rel: str) -> None:
+    """Add `rel` to the clone's .git/info/exclude unless already listed.
+
+    Only a plain .git directory is handled; a worktree or submodule (.git is
+    a file) is left alone — best effort, like everything here.
+    """
+    git_dir = project / ".git"
+    if not git_dir.is_dir():
+        return
+    exclude = git_dir / "info" / "exclude"
+    text = read_text(exclude)
+    if f"/{rel}" in text.splitlines():
+        return
+    exclude.parent.mkdir(exist_ok=True)
+    with exclude.open("a") as fh:
+        fh.write(("\n" if text else "") + f"/{rel}\n")
+
+
+def write_activity(cdir: Path, text: str) -> None:
+    ensure_git_excluded(cdir.parent, f".claude/{ACTIVITY_FILE}")
+    record = {
+        "text": text,
+        "since": int(time.time()),
+        "session_id": read_text(cdir / ".session-id"),
+    }
+    tmp = cdir / (ACTIVITY_FILE + ".tmp")
+    tmp.write_text(json.dumps(record) + "\n")
+    tmp.replace(cdir / ACTIVITY_FILE)
+
+
+def mark_last(cdir: Path) -> None:
+    """Mark the recorded activity as the last command, not the current one.
+
+    The text, its start time and its session stay as they were, so the line
+    reads "last: <text>" with the age still counting from the command. A
+    missing, unreadable or already-marked record is left alone."""
+    path = cdir / ACTIVITY_FILE
+    try:
+        record = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return
+    if not isinstance(record, dict) or record.get("last"):
+        return
+    record["last"] = True
+    tmp = cdir / (ACTIVITY_FILE + ".tmp")
+    tmp.write_text(json.dumps(record) + "\n")
+    tmp.replace(path)
+
+
+# Turns the harness injects rather than the operator types: they start with
+# one of these tags.
+INJECTED_PREFIXES = ("<task-notification", "<system-reminder")
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text().strip()
+    except OSError:
+        return ""
+
+
+def handle_hook(payload: dict) -> None:
+    cdir = claude_dir(payload)
+    event = payload.get("hook_event_name")
+    if event == "UserPromptSubmit":
+        prompt = payload.get("prompt") or ""
+        if not prompt.strip():
+            # Qwen Code also fires this hook with an empty prompt on its own
+            # turns; that says nothing about what the YAC is working on.
+            return
+        if prompt.lstrip().startswith(INJECTED_PREFIXES):
+            # A background-task notice or system reminder: the operator said
+            # nothing, so the line stays exactly as it was.
+            return
+        activity = wip_activity(prompt)
+        if not activity:
+            # Qwen Code sends a slash command expanded into the command's
+            # text, with the typed command appended as the last line.
+            last = prompt.rstrip().rsplit("\n", 1)[-1].strip()
+            if last.startswith("/"):
+                activity = wip_activity(last)
+        if activity:
+            write_activity(cdir, activity)
+        else:
+            # Not a /wip-* command — usually the operator answering a
+            # question mid-command. The command may well still be running,
+            # so it stays on the line, marked as the last one.
+            mark_last(cdir)
+    elif event == "PreToolUse" and payload.get("tool_name") in SKILL_TOOLS:
+        tool_input = payload.get("tool_input") or {}
+        skill = (tool_input.get("skill") or "").lstrip("/")
+        activity = wip_activity(f"/{skill} {tool_input.get('args') or ''}")
+        if activity:
+            write_activity(cdir, activity)
+    elif event == "PostToolUse" and payload.get("tool_name") in SHELL_TOOLS:
+        command = (payload.get("tool_input") or {}).get("command") or ""
+        patch = PATCH_RE.search(command)
+        if patch and patch.group(1) in DONE_LABELS:
+            write_activity(cdir, f"{DONE_LABELS[patch.group(1)]} CASE-{patch.group(2)}")
+
+
+def age(seconds: int) -> str:
+    if seconds < 3600:
+        return f"{max(seconds // 60, 0)}m"
+    return f"{seconds // 3600}h{(seconds % 3600) // 60:02d}m"
+
+
+def context_usage(payload: dict) -> tuple[float | None, int | None, int | None]:
+    """(percent used, tokens used, window size) from the status-line payload.
+
+    The tokens must be what the context holds NOW, because the slim stop rule
+    compares them with an absolute limit. `total_input_tokens` is not that in
+    every harness: Qwen Code sends the sum over every request of the session
+    (500k at 6% full), so it is the last resort. In order: `current_usage`
+    when it is a number (Qwen Code), else the harness's own fill percentage
+    times the window size (Claude Code), else `total_input_tokens`.
+    """
+    window = payload.get("context_window") or {}
+    used = window.get("used_percentage")
+    size = window.get("context_window_size")
+    current = window.get("current_usage")
+    if isinstance(current, (int, float)) and not isinstance(current, bool):
+        tokens = int(current)
+    elif used is not None and size:
+        tokens = int(used * size / 100)
+    else:
+        tokens = window.get("total_input_tokens")
+    if used is None and tokens and size:
+        used = tokens * 100 / size
+    return used, tokens, size
+
+
+def app_profile(cdir: Path) -> str:
+    match = PROFILE_RE.search(read_text(cdir / ".app-meta"))
+    return match.group(1) if match else ""
+
+
+def context_warning(cdir: Path, used: float, tokens: int | None) -> bool:
+    if app_profile(cdir) == "slim" and tokens is not None:
+        return tokens >= SLIM_WARN_TOKENS
+    return int(f"{used:.0f}") >= CONTEXT_WARN_PERCENT  # the number shown decides
+
+
+def context_part(payload: dict, cdir: Path) -> str:
+    used, tokens, size = context_usage(payload)
+    if used is None:
+        return ""
+    part = f"ctx {used:.0f}%"
+    if tokens and size:
+        part += f" ({tokens // 1000}k/{size // 1000}k)"
+    if context_warning(cdir, used, tokens):
+        part = f"{RED}{part}{RESET}"
+    # The profile sets the warning threshold; showing it makes a profile lost
+    # to a refresh visible instead of a silently different threshold.
+    profile = app_profile(cdir)
+    return f"{profile} {part}" if profile else part
+
+
+def write_context_file(payload: dict, cdir: Path) -> None:
+    """Write the usage to <project>/.claude-context-pct, or remove a stale one.
+
+    The percentage comes first, so a rule like "past 50%" reads it directly;
+    the token count serves an absolute limit.
+    """
+    path = cdir.parent / CONTEXT_FILE
+    used, tokens, size = context_usage(payload)
+    if used is None:
+        path.unlink(missing_ok=True)
+        return
+    text = f"{used:.0f}%"
+    if tokens and size:
+        text += f" ({tokens // 1000}k/{size // 1000}k tokens)"
+    ensure_git_excluded(cdir.parent, CONTEXT_FILE)
+    tmp = cdir.parent / (CONTEXT_FILE + ".tmp")
+    tmp.write_text(text + "\n")
+    tmp.replace(path)
+
+
+def status_line(payload: dict) -> str:
+    cdir = claude_dir(payload)
+    parts = []
+    try:
+        record = json.loads((cdir / ACTIVITY_FILE).read_text())
+    except (OSError, ValueError):
+        record = None
+    # An activity recorded under an earlier session id belongs to that
+    # session; a fresh session starts with nothing to show.
+    if record and record.get("session_id") == read_text(cdir / ".session-id"):
+        parts.append(read_text(cdir / ".session-role") or "YAC")
+        # Records written before "text" existed carry label + case.
+        text = record.get("text") or f"{record['label']} {record['case']}"
+        parts.append(f"last: {text}" if record.get("last") else text)
+        parts.append(age(int(time.time()) - int(record.get("since", 0))))
+    ctx = context_part(payload, cdir)
+    if ctx:
+        parts.append(ctx)
+    # The line must still print when the project dir is read-only.
+    with contextlib.suppress(OSError):
+        write_context_file(payload, cdir)
+    return " · ".join(parts)
+
+
+def main() -> None:
+    mode = sys.argv[1] if len(sys.argv) > 1 else "line"
+    try:
+        payload = json.load(sys.stdin)
+    except ValueError:
+        payload = {}
+    try:
+        if mode == "hook":
+            handle_hook(payload)
+        else:
+            print(status_line(payload))
+    except Exception:  # a status helper must never fail the session
+        pass
+
+
+if __name__ == "__main__":
+    main()

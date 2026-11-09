@@ -2,5 +2,7 @@
 # regenerate CLAUDE.md. Edit deliberately if the app's metadata changes.
 APP_NAME="WIP-SONG"
 APP_SLUG="wip-song"
-DEV_NAMESPACE="dev-wip-song"
+APP_NAMESPACE="dev-wip-song"
 PRESET="standard"
+PROFILE="full"
+ROLE_PREFIX="APP-SONG"

@@ -106,6 +106,8 @@ Use `type: "reference"` whenever one document points to another. **Never use `ty
 
 This gives you: validated references, automatic resolution by business key or synonym, and referential integrity checks.
 
+**Cross-namespace references use an explicit qualifier.** A bare value like `"CUSTOMER"` always resolves in your own namespace. To reference a template (or terminology) that lives in a *sibling* namespace, qualify it: `"target_templates": ["other-ns:CUSTOMER"]` — deterministic, one lookup, no UUID pinning, and the reference survives the foreign namespace being rebuilt. Terms use three parts: `"other-ns:STATUS:approved"`. (Details: WIP repo `docs/design/universal-synonym-resolution.md`, "Cross-namespace references".)
+
 **Creation order matters:** Create templates for referenced entities before templates that reference them (e.g., CUSTOMER before INVOICE). Same for documents.
 
 ### Term Fields — Linking to Vocabularies
@@ -212,7 +214,7 @@ WIP has 8 behaviours that violate conventional expectations. Read `wip://ponifs`
 | **Term** | A value within a terminology, with label and aliases | Aliases enable fuzzy matching on import |
 | **Template** | Document schema defining fields, types, validation | Templates are versioned — multiple versions coexist |
 | **Document** | A data record conforming to a template | Versioned via identity hash — same identity = new version |
-| **File** | Binary attachment stored in MinIO | First-class entity with reference tracking and orphan detection |
+| **File** | Binary attachment stored in Garage | First-class entity with reference tracking and orphan detection |
 | **Registry** | Central ID authority with synonym support | Enables cross-system integration without mapping tables |
 | **Namespace** | Logical partition for all entities | Enables backup/restore, multi-tenancy, data isolation |
 | **Reporting Sync** | Real-time MongoDB → PostgreSQL via NATS | Enables SQL queries and BI dashboards over document data |
